@@ -207,3 +207,29 @@ def record_payment(
     out = PaymentOut.model_validate(payment)
     out.tenant_name = payment.tenant.name if payment.tenant else None
     return out
+
+
+@router.delete("/payments/{payment_id}")
+def delete_payment(
+    payment_id: int,
+    db: Session = Depends(get_db),
+    _user: User = Depends(get_current_user),
+):
+    payment = db.query(Payment).filter(Payment.id == payment_id).first()
+    if not payment:
+        raise HTTPException(status_code=404, detail="Payment not found")
+
+    # Reverse the payment from the rent record
+    rent = db.query(Rent).filter(Rent.id == payment.rent_id).first()
+    if rent:
+        rent.amount_paid = max(0, rent.amount_paid - payment.amount)
+        if rent.amount_paid <= 0:
+            rent.status = RentStatus.PENDING
+            rent.paid_date = None
+        elif rent.amount_paid < rent.amount_due:
+            rent.status = RentStatus.PARTIAL
+            rent.paid_date = None
+
+    db.delete(payment)
+    db.commit()
+    return {"message": "Payment deleted"}

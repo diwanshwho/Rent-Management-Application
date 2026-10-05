@@ -66,6 +66,12 @@ async function loadTenant() {
                 <p class="mt-1">${badge}</p>
             </div>
         `;
+
+        // Hide deactivate button if already inactive
+        var deactivateBtn = document.getElementById("btn-deactivate");
+        if (deactivateBtn) {
+            deactivateBtn.style.display = isActive ? "" : "none";
+        }
     } catch (err) {
         document.getElementById("tenant-info").innerHTML =
             '<div class="text-red-500 text-center py-4 col-span-full">Failed to load tenant info.</div>';
@@ -186,6 +192,11 @@ async function loadElectricity() {
                     <p class="font-semibold text-amber-600 mt-1">${formatMoney(total)}</p>
                 </div>
             </div>
+            <div class="mt-3 flex gap-2">
+                <button onclick="deleteElectricity(${reading.id})" class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors">
+                    🗑️ Delete Reading
+                </button>
+            </div>
         `;
     } catch (err) {
         container.innerHTML = '<div class="text-red-500 text-center py-4">Failed to load electricity info.</div>';
@@ -215,7 +226,10 @@ async function loadPaymentHistory() {
                 <div class="mobile-card border border-gray-100 rounded-lg p-4 hover:bg-gray-50 transition-colors">
                     <div class="card-header flex items-center justify-between mb-2">
                         <span class="font-semibold text-emerald-600">${formatMoney(p.amount)}</span>
-                        <span class="text-gray-400 text-sm">${formattedDate}</span>
+                        <div class="flex items-center gap-2">
+                            <span class="text-gray-400 text-sm">${formattedDate}</span>
+                            <button onclick="event.stopPropagation(); deletePayment(${p.id})" class="text-red-400 hover:text-red-600 text-sm" title="Delete payment">🗑️</button>
+                        </div>
                     </div>
                     <div class="card-row flex items-center justify-between text-sm py-1">
                         <span class="label text-gray-500">Month</span>
@@ -444,6 +458,43 @@ async function sendReminder() {
         await loadNotificationHistory();
     } catch (err) {
         showToast("Failed to create reminder", "error");
+    }
+}
+
+// ─── Deactivate Tenant ─────────────────────────────────────────────
+async function deactivateTenant() {
+    if (!tenant) return;
+    if (!confirm(`Are you sure you want to deactivate ${tenant.name}? They will be hidden from the dashboard.`)) return;
+    try {
+        await apiDelete(`/tenants/${tenantId}`);
+        showToast("Tenant deactivated", "success");
+        window.location.href = "dashboard.html";
+    } catch (err) {
+        showToast("Failed to deactivate tenant", "error");
+    }
+}
+
+// ─── Delete Payment ────────────────────────────────────────────────
+async function deletePayment(paymentId) {
+    if (!confirm("Delete this payment? The rent status will be updated accordingly.")) return;
+    try {
+        await apiDelete(`/rents/payments/${paymentId}`);
+        showToast("Payment deleted", "success");
+        await Promise.all([loadRent(), loadPaymentHistory()]);
+    } catch (err) {
+        showToast("Failed to delete payment", "error");
+    }
+}
+
+// ─── Delete Electricity Reading ────────────────────────────────────
+async function deleteElectricity(billId) {
+    if (!confirm("Delete this electricity reading?")) return;
+    try {
+        await apiDelete(`/electricity/${billId}`);
+        showToast("Electricity reading deleted", "success");
+        await loadElectricity();
+    } catch (err) {
+        showToast("Failed to delete reading", "error");
     }
 }
 
