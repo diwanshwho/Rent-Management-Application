@@ -163,6 +163,7 @@ class RentOut(BaseModel):
     month: int
     year: int
     amount_due: float
+    electricity_amount: float = 0
     amount_paid: float
     status: str
     due_date: date
@@ -236,6 +237,7 @@ class NotificationOut(BaseModel):
 # --- Electricity ---
 
 class ElectricityCreate(BaseModel):
+    tenant_id: int
     room_number: str
     month: int
     year: int
@@ -260,6 +262,7 @@ class ElectricityCreate(BaseModel):
 
 class ElectricityOut(BaseModel):
     id: int
+    tenant_id: int
     room_number: str
     month: int
     year: int

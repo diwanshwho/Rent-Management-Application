@@ -1,11 +1,36 @@
 requireAuth();
 
+const monthNames = [
+    "", "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
+];
+
 const now = new Date();
 let currentMonth = now.getMonth() + 1;
 let currentYear = now.getFullYear();
 
-document.getElementById("month-label").textContent =
-    `${now.toLocaleString("default", { month: "long" })} ${currentYear}`;
+function updateMonthLabel() {
+    document.getElementById("month-label").textContent =
+        `${monthNames[currentMonth]} ${currentYear}`;
+}
+
+function prevMonth() {
+    currentMonth--;
+    if (currentMonth < 1) { currentMonth = 12; currentYear--; }
+    updateMonthLabel();
+    loadDashboard();
+    loadTenants();
+}
+
+function nextMonth() {
+    currentMonth++;
+    if (currentMonth > 12) { currentMonth = 1; currentYear++; }
+    updateMonthLabel();
+    loadDashboard();
+    loadTenants();
+}
+
+updateMonthLabel();
 
 // --- Load dashboard stats ---
 async function loadDashboard() {

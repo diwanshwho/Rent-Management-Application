@@ -5,8 +5,8 @@ const tenantId = params.get("id");
 if (!tenantId) window.location.href = "dashboard.html";
 
 const now = new Date();
-const currentMonth = now.getMonth() + 1;
-const currentYear = now.getFullYear();
+let currentMonth = now.getMonth() + 1;
+let currentYear = now.getFullYear();
 let tenant = null;
 let currentRent = null;
 
@@ -101,13 +101,33 @@ async function loadRent() {
 
         const remaining = (currentRent.amount_due || 0) - (currentRent.amount_paid || 0);
         const status = currentRent.status || "pending";
+        const elecAmt = currentRent.electricity_amount || 0;
+        const baseRent = currentRent.amount_due - elecAmt;
+
+        // Show breakdown if electricity is included
+        const breakdownHtml = elecAmt > 0 ? `
+            <div class="bg-gray-50 rounded-lg p-3">
+                <span class="text-gray-500 text-xs uppercase tracking-wide">Base Rent</span>
+                <p class="font-semibold text-gray-800 mt-1">${formatMoney(baseRent)}</p>
+            </div>
+            <div class="bg-gray-50 rounded-lg p-3">
+                <span class="text-gray-500 text-xs uppercase tracking-wide">Electricity</span>
+                <p class="font-semibold text-amber-600 mt-1">${formatMoney(elecAmt)}</p>
+            </div>
+            <div class="bg-gray-50 rounded-lg p-3">
+                <span class="text-gray-500 text-xs uppercase tracking-wide">Total Due</span>
+                <p class="font-semibold text-gray-800 mt-1">${formatMoney(currentRent.amount_due)}</p>
+            </div>
+        ` : `
+            <div class="bg-gray-50 rounded-lg p-3">
+                <span class="text-gray-500 text-xs uppercase tracking-wide">Due</span>
+                <p class="font-semibold text-gray-800 mt-1">${formatMoney(currentRent.amount_due)}</p>
+            </div>
+        `;
 
         container.innerHTML = `
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
-                <div class="bg-gray-50 rounded-lg p-3">
-                    <span class="text-gray-500 text-xs uppercase tracking-wide">Due</span>
-                    <p class="font-semibold text-gray-800 mt-1">${formatMoney(currentRent.amount_due)}</p>
-                </div>
+                ${breakdownHtml}
                 <div class="bg-gray-50 rounded-lg p-3">
                     <span class="text-gray-500 text-xs uppercase tracking-wide">Paid</span>
                     <p class="font-semibold text-emerald-600 mt-1">${formatMoney(currentRent.amount_paid)}</p>
@@ -151,7 +171,7 @@ async function loadElectricity() {
         return;
     }
     try {
-        const readings = await apiGet(`/electricity/?room_number=${encodeURIComponent(tenant.room_number)}&month=${currentMonth}&year=${currentYear}`);
+        const readings = await apiGet(`/electricity/?tenant_id=${tenantId}&month=${currentMonth}&year=${currentYear}`);
         const reading = Array.isArray(readings) && readings.length > 0 ? readings[0] : null;
 
         if (!reading) {
@@ -377,9 +397,9 @@ async function openElectricityModal() {
     modal.classList.add("flex");
 
     // Auto-populate previous reading from the last bill
-    if (tenant && tenant.room_number) {
+    if (tenant) {
         try {
-            var last = await apiGet("/electricity/last-reading/" + encodeURIComponent(tenant.room_number));
+            var last = await apiGet("/electricity/last-reading/" + tenantId);
             if (last && last.curr_reading !== null) {
                 document.getElementById("elec-prev").value = last.curr_reading;
                 document.getElementById("elec-rate").value = last.rate_per_unit || "8";
@@ -428,6 +448,7 @@ async function saveElectricity(e) {
 
     try {
         await apiPost("/electricity/", {
+            tenant_id: parseInt(tenantId),
             room_number: tenant.room_number,
             month: currentMonth,
             year: currentYear,
@@ -437,7 +458,7 @@ async function saveElectricity(e) {
         });
         showToast("Electricity reading saved", "success");
         closeElectricityModal();
-        await loadElectricity();
+        await Promise.all([loadElectricity(), loadElectricityHistory(), loadRent()]);
     } catch (err) {
         showToast("Failed to save electricity reading", "error");
     }
@@ -492,10 +513,71 @@ async function deleteElectricity(billId) {
     try {
         await apiDelete(`/electricity/${billId}`);
         showToast("Electricity reading deleted", "success");
-        await loadElectricity();
+        await Promise.all([loadElectricity(), loadElectricityHistory(), loadRent()]);
     } catch (err) {
         showToast("Failed to delete reading", "error");
     }
+}
+
+// ─── Electricity History ───────────────────────────────────────────
+async function loadElectricityHistory() {
+    const container = document.getElementById("electricity-history-content");
+    if (!tenant) {
+        container.innerHTML = '<div class="text-gray-400 text-center py-4">Loading...</div>';
+        return;
+    }
+    try {
+        const bills = await apiGet(`/electricity/?tenant_id=${tenantId}`);
+        if (!Array.isArray(bills) || bills.length === 0) {
+            container.innerHTML = '<div class="text-gray-400 text-center py-6">No electricity readings yet.</div>';
+            return;
+        }
+
+        container.innerHTML = `<div class="flex flex-col gap-3">${bills.map(b => {
+            const units = (b.curr_reading || 0) - (b.prev_reading || 0);
+            return `
+                <div class="border border-gray-100 rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="font-semibold text-gray-800">${monthNames[b.month]} ${b.year}</span>
+                        <div class="flex items-center gap-2">
+                            <span class="font-semibold text-amber-600">${formatMoney(b.total_amount)}</span>
+                            <button onclick="event.stopPropagation(); deleteElectricity(${b.id})" class="text-red-400 hover:text-red-600 text-sm" title="Delete reading">🗑️</button>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2 text-sm">
+                        <div><span class="text-gray-500">Prev:</span> <span class="text-gray-800">${b.prev_reading}</span></div>
+                        <div><span class="text-gray-500">Curr:</span> <span class="text-gray-800">${b.curr_reading}</span></div>
+                        <div><span class="text-gray-500">Units:</span> <span class="text-gray-800">${units} × ₹${b.rate_per_unit}</span></div>
+                    </div>
+                </div>
+            `;
+        }).join("")}</div>`;
+    } catch (err) {
+        container.innerHTML = '<div class="text-red-500 text-center py-4">Failed to load electricity history.</div>';
+    }
+}
+
+// ─── Month Navigation ──────────────────────────────────────────────
+function prevMonth() {
+    currentMonth--;
+    if (currentMonth < 1) { currentMonth = 12; currentYear--; }
+    updateMonthLabel();
+    loadRent();
+    loadElectricity();
+}
+
+function nextMonth() {
+    currentMonth++;
+    if (currentMonth > 12) { currentMonth = 1; currentYear++; }
+    updateMonthLabel();
+    loadRent();
+    loadElectricity();
+}
+
+function updateMonthLabel() {
+    var label = monthNames[currentMonth] + " " + currentYear;
+    var el = document.getElementById("month-nav-label");
+    if (el) el.textContent = label;
 }
 
 // ─── Sidebar Toggle ─────────────────────────────────────────────────
@@ -508,10 +590,12 @@ function toggleSidebar() {
 
 // ─── Init ───────────────────────────────────────────────────────────
 async function init() {
+    updateMonthLabel();
     await loadTenant();
     await Promise.all([
         loadRent(),
         loadElectricity(),
+        loadElectricityHistory(),
         loadPaymentHistory(),
         loadNotificationHistory()
     ]);

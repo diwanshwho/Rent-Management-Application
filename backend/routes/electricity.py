@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from database import get_db
-from models import ElectricityBill, User
+from models import ElectricityBill, Tenant, Rent, RentStatus, User
 from schemas import ElectricityCreate, ElectricityOut
 from auth import get_current_user
 
@@ -13,15 +13,15 @@ router = APIRouter(prefix="/electricity", tags=["Electricity"])
 
 @router.get("/", response_model=List[ElectricityOut])
 def list_bills(
-    room_number: Optional[str] = None,
+    tenant_id: Optional[int] = None,
     month: Optional[int] = None,
     year: Optional[int] = None,
     db: Session = Depends(get_db),
     _user: User = Depends(get_current_user),
 ):
     query = db.query(ElectricityBill)
-    if room_number:
-        query = query.filter(ElectricityBill.room_number == room_number)
+    if tenant_id:
+        query = query.filter(ElectricityBill.tenant_id == tenant_id)
     if month:
         query = query.filter(ElectricityBill.month == month)
     if year:
@@ -29,15 +29,15 @@ def list_bills(
     return query.order_by(ElectricityBill.year.desc(), ElectricityBill.month.desc()).all()
 
 
-@router.get("/last-reading/{room_number}")
+@router.get("/last-reading/{tenant_id}")
 def last_reading(
-    room_number: str,
+    tenant_id: int,
     db: Session = Depends(get_db),
     _user: User = Depends(get_current_user),
 ):
-    """Return the most recent electricity bill for a room (for auto-populating prev reading)."""
+    """Return the most recent electricity bill for a tenant (for auto-populating prev reading)."""
     bill = db.query(ElectricityBill).filter(
-        ElectricityBill.room_number == room_number
+        ElectricityBill.tenant_id == tenant_id
     ).order_by(ElectricityBill.year.desc(), ElectricityBill.month.desc()).first()
     if not bill:
         return {"curr_reading": None, "rate_per_unit": 8.0}
@@ -50,14 +50,19 @@ def add_reading(
     db: Session = Depends(get_db),
     _user: User = Depends(get_current_user),
 ):
-    # Check for duplicate
+    # Validate tenant exists
+    tenant = db.query(Tenant).filter(Tenant.id == data.tenant_id).first()
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Tenant not found")
+
+    # Check for duplicate (same tenant + month + year)
     existing = db.query(ElectricityBill).filter(
-        ElectricityBill.room_number == data.room_number,
+        ElectricityBill.tenant_id == data.tenant_id,
         ElectricityBill.month == data.month,
         ElectricityBill.year == data.year,
     ).first()
     if existing:
-        raise HTTPException(status_code=400, detail="Reading already exists for this room/month")
+        raise HTTPException(status_code=400, detail="Reading already exists for this tenant/month")
 
     if data.curr_reading < data.prev_reading:
         raise HTTPException(status_code=400, detail="Current reading cannot be less than previous")
@@ -66,6 +71,7 @@ def add_reading(
     total = units * data.rate_per_unit
 
     bill = ElectricityBill(
+        tenant_id=data.tenant_id,
         room_number=data.room_number,
         month=data.month,
         year=data.year,
@@ -75,6 +81,19 @@ def add_reading(
         total_amount=round(total, 2),
     )
     db.add(bill)
+
+    # Update the corresponding rent record with electricity amount
+    rent = db.query(Rent).filter(
+        Rent.tenant_id == data.tenant_id, Rent.month == data.month, Rent.year == data.year
+    ).first()
+    if rent:
+        rent.electricity_amount = round(total, 2)
+        rent.amount_due = tenant.monthly_rent + round(total, 2)
+        if rent.amount_paid >= rent.amount_due:
+            rent.status = RentStatus.PAID
+        elif rent.amount_paid > 0:
+            rent.status = RentStatus.PARTIAL
+
     db.commit()
     db.refresh(bill)
     return bill
@@ -89,6 +108,23 @@ def delete_bill(
     bill = db.query(ElectricityBill).filter(ElectricityBill.id == bill_id).first()
     if not bill:
         raise HTTPException(status_code=404, detail="Bill not found")
+
+    # Reverse the electricity amount from the rent record
+    tenant = db.query(Tenant).filter(Tenant.id == bill.tenant_id).first()
+    if tenant:
+        rent = db.query(Rent).filter(
+            Rent.tenant_id == bill.tenant_id, Rent.month == bill.month, Rent.year == bill.year
+        ).first()
+        if rent:
+            rent.electricity_amount = 0
+            rent.amount_due = tenant.monthly_rent
+            if rent.amount_paid >= rent.amount_due:
+                rent.status = RentStatus.PAID
+            elif rent.amount_paid > 0:
+                rent.status = RentStatus.PARTIAL
+            else:
+                rent.status = RentStatus.PENDING
+
     db.delete(bill)
     db.commit()
     return {"message": "Bill deleted"}

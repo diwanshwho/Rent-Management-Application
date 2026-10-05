@@ -28,7 +28,9 @@ def dashboard_stats(
     total_tenants = db.query(Tenant).count()
     active_tenants = db.query(Tenant).filter(Tenant.is_active == True).count()
 
-    rents = db.query(Rent).filter(Rent.month == m, Rent.year == y).all()
+    rents = db.query(Rent).join(Tenant).filter(
+        Rent.month == m, Rent.year == y, Tenant.is_active == True
+    ).all()
 
     paid = [r for r in rents if r.status == RentStatus.PAID]
     pending = [r for r in rents if r.status in (RentStatus.PENDING, RentStatus.PARTIAL)]
@@ -58,7 +60,7 @@ def list_rents(
     db: Session = Depends(get_db),
     _user: User = Depends(get_current_user),
 ):
-    query = db.query(Rent)
+    query = db.query(Rent).join(Tenant).filter(Tenant.is_active == True)
     if month:
         query = query.filter(Rent.month == month)
     if year:
@@ -140,9 +142,10 @@ def mark_overdue(
 ):
     """Mark all past-due pending rents as overdue."""
     today = date.today()
-    rents = db.query(Rent).filter(
+    rents = db.query(Rent).join(Tenant).filter(
         Rent.status.in_([RentStatus.PENDING, RentStatus.PARTIAL]),
         Rent.due_date < today,
+        Tenant.is_active == True,
     ).all()
 
     count = 0
@@ -161,7 +164,7 @@ def list_payments(
     db: Session = Depends(get_db),
     _user: User = Depends(get_current_user),
 ):
-    query = db.query(Payment)
+    query = db.query(Payment).join(Tenant, Payment.tenant_id == Tenant.id).filter(Tenant.is_active == True)
     if tenant_id:
         query = query.filter(Payment.tenant_id == tenant_id)
     payments = query.order_by(Payment.date.desc()).all()

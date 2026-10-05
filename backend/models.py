@@ -58,6 +58,7 @@ class Tenant(Base):
     rents = relationship("Rent", back_populates="tenant", cascade="all, delete-orphan")
     payments = relationship("Payment", back_populates="tenant", cascade="all, delete-orphan")
     notifications = relationship("Notification", back_populates="tenant", cascade="all, delete-orphan")
+    electricity_bills = relationship("ElectricityBill", back_populates="tenant", cascade="all, delete-orphan")
 
 
 class Rent(Base):
@@ -69,6 +70,7 @@ class Rent(Base):
     month = Column(Integer, nullable=False)
     year = Column(Integer, nullable=False)
     amount_due = Column(Float, nullable=False)
+    electricity_amount = Column(Float, default=0, nullable=False, server_default="0")
     amount_paid = Column(Float, default=0)
     status = Column(String, default=RentStatus.PENDING)
     due_date = Column(Date, nullable=False)
@@ -110,9 +112,10 @@ class Notification(Base):
 
 class ElectricityBill(Base):
     __tablename__ = "electricity_bills"
-    __table_args__ = (UniqueConstraint("room_number", "month", "year", name="uq_room_month_year"),)
+    __table_args__ = (UniqueConstraint("tenant_id", "month", "year", name="uq_tenant_elec_month_year"),)
 
     id = Column(Integer, primary_key=True, index=True)
+    tenant_id = Column(Integer, ForeignKey("tenants.id"), nullable=False)
     room_number = Column(String, nullable=False)
     month = Column(Integer, nullable=False)
     year = Column(Integer, nullable=False)
@@ -121,3 +124,5 @@ class ElectricityBill(Base):
     rate_per_unit = Column(Float, nullable=False, default=8.0)
     total_amount = Column(Float, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+    tenant = relationship("Tenant", back_populates="electricity_bills")
