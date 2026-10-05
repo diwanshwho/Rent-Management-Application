@@ -8,10 +8,10 @@ if db_url.startswith("postgresql://"):
     
 # SQLite needs check_same_thread=False; PostgreSQL doesn't
 connect_args = {}
-if DATABASE_URL.startswith("sqlite"):
+if db_url.startswith("sqlite"):
     connect_args["check_same_thread"] = False
 
-engine = create_engine(DATABASE_URL, connect_args=connect_args)
+engine = create_engine(db_url, connect_args=connect_args)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
