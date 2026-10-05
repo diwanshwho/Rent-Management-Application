@@ -7,51 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="css/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Inter', sans-serif; }
-
-        /* Bottom nav active state */
-        .bottom-nav-link.active { color: #4f46e5; }
-
-        /* Mobile card styles */
-        .mobile-card {
-            background: #fff;
-            border: 1px solid #f3f4f6;
-            border-radius: 0.75rem;
-            padding: 1rem;
-            margin-bottom: 0.75rem;
-        }
-        .mobile-card .card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 0.5rem;
-        }
-        .mobile-card .card-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0.35rem 0;
-            font-size: 0.875rem;
-        }
-        .mobile-card .card-row .label {
-            color: #6b7280;
-        }
-        .mobile-card .card-row .value {
-            font-medium: 500;
-            color: #1f2937;
-        }
-        .mobile-card .card-actions {
-            display: flex;
-            gap: 0.5rem;
-            margin-top: 0.75rem;
-            padding-top: 0.75rem;
-            border-top: 1px solid #f3f4f6;
-        }
-
-        /* Safe area for bottom nav */
-        .pb-safe { padding-bottom: 5rem; }
-    </style>
+    <style>body { font-family: 'Inter', sans-serif; }</style>
 </head>
 <body class="bg-gray-50 min-h-screen">
     <div id="toast-container" class="fixed top-4 right-4 z-50"></div>
@@ -68,14 +24,8 @@
             <a href="dashboard.html" class="nav-link active flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium">
                 <span>📊</span> Dashboard
             </a>
-            <a href="tenants.html" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600">
-                <span>👥</span> Tenants
-            </a>
-            <a href="payments.html" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600">
-                <span>💰</span> Payments
-            </a>
-            <a href="electricity.html" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600">
-                <span>⚡</span> Electricity
+            <a href="notifications.html" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600">
+                <span>🔔</span> Notifications
             </a>
         </nav>
         <div class="absolute bottom-4 left-3 right-3">
@@ -93,28 +43,24 @@
     </header>
 
     <!-- Main Content -->
-    <main class="md:ml-60 p-4 md:p-6 pb-safe md:pb-6">
-        <!-- Header with action buttons -->
+    <main class="md:ml-60 p-4 md:p-6 pb-24 md:pb-6">
+
+        <!-- Header row -->
         <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-3">
             <div>
                 <h1 class="text-xl md:text-2xl font-bold text-gray-800">Dashboard</h1>
                 <p class="text-gray-500 text-sm" id="month-label"></p>
             </div>
-            <div class="flex flex-col sm:flex-row gap-2">
-                <button onclick="generateRents()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 md:py-2 rounded-lg text-sm font-medium transition w-full sm:w-auto">
-                    Generate Rents
-                </button>
-                <button onclick="markOverdue()" class="bg-rose-500 hover:bg-rose-600 text-white px-4 py-2.5 md:py-2 rounded-lg text-sm font-medium transition w-full sm:w-auto">
-                    Mark Overdue
-                </button>
-            </div>
+            <button onclick="openAddModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 md:py-2 rounded-lg text-sm font-medium transition w-full md:w-auto">
+                + Add Tenant
+            </button>
         </div>
 
-        <!-- Stat Cards -->
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-6" id="stat-cards">
-            <div class="stat-card bg-white rounded-xl p-4 md:p-5 shadow-sm border border-gray-100">
-                <p class="text-xs md:text-sm text-gray-500">Active Tenants</p>
-                <p class="text-xl md:text-2xl font-bold text-gray-800 mt-1" id="stat-active">-</p>
+        <!-- Stat Cards (2x2 grid) -->
+        <div class="grid grid-cols-2 gap-3 md:gap-4 mb-6" id="stat-cards">
+            <div class="stat-card bg-white rounded-xl p-4 md:p-5 shadow-sm border border-indigo-100 bg-indigo-50/50">
+                <p class="text-xs md:text-sm text-indigo-600">Active Tenants</p>
+                <p class="text-xl md:text-2xl font-bold text-indigo-700 mt-1" id="stat-active">-</p>
             </div>
             <div class="stat-card bg-white rounded-xl p-4 md:p-5 shadow-sm border border-emerald-100 bg-emerald-50/50">
                 <p class="text-xs md:text-sm text-emerald-600">Paid</p>
@@ -130,25 +76,32 @@
             </div>
         </div>
 
-        <!-- Collection Summary -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-4 mb-6">
-            <div class="bg-white rounded-xl p-4 md:p-5 shadow-sm border border-gray-100">
-                <h3 class="font-semibold text-gray-700 mb-1 text-sm md:text-base">💰 Collected This Month</h3>
+        <!-- Collection Summary (2 col) -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 mb-6">
+            <div class="bg-white rounded-xl p-4 md:p-5 shadow-sm border border-emerald-100">
+                <h3 class="font-semibold text-gray-700 mb-1 text-sm md:text-base">Total Collected</h3>
                 <p class="text-2xl md:text-3xl font-bold text-emerald-600" id="total-collected">₹0</p>
             </div>
-            <div class="bg-white rounded-xl p-4 md:p-5 shadow-sm border border-gray-100">
-                <h3 class="font-semibold text-gray-700 mb-1 text-sm md:text-base">⏳ Pending Amount</h3>
+            <div class="bg-white rounded-xl p-4 md:p-5 shadow-sm border border-amber-100">
+                <h3 class="font-semibold text-gray-700 mb-1 text-sm md:text-base">Pending Amount</h3>
                 <p class="text-2xl md:text-3xl font-bold text-amber-600" id="total-pending">₹0</p>
             </div>
         </div>
 
-        <!-- Unpaid Tenants Section -->
+        <!-- Action Buttons Row -->
+        <div class="flex flex-col md:flex-row gap-2 md:gap-3 mb-6">
+            <button onclick="generateRents()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 md:py-2 rounded-lg text-sm font-medium transition w-full md:w-auto">
+                Generate Rents
+            </button>
+            <button onclick="markOverdue()" class="bg-rose-500 hover:bg-rose-600 text-white px-4 py-2.5 md:py-2 rounded-lg text-sm font-medium transition w-full md:w-auto">
+                Mark Overdue
+            </button>
+        </div>
+
+        <!-- Tenant List Section -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-100">
-            <div class="p-4 md:p-5 border-b border-gray-100 flex items-center justify-between">
-                <h3 class="font-semibold text-gray-700 text-sm md:text-base">Unpaid Tenants</h3>
-                <button onclick="sendBulkReminders()" class="bg-amber-500 hover:bg-amber-600 text-white px-3 py-2 md:py-1.5 rounded-lg text-sm font-medium transition">
-                    📱 Remind All
-                </button>
+            <div class="p-4 md:p-5 border-b border-gray-100">
+                <h3 class="font-semibold text-gray-700 text-sm md:text-base">All Tenants</h3>
             </div>
 
             <!-- Desktop table (hidden on mobile) -->
@@ -156,23 +109,23 @@
                 <table class="w-full">
                     <thead>
                         <tr class="text-left text-xs text-gray-500 uppercase border-b border-gray-100">
-                            <th class="px-5 py-3">Tenant</th>
+                            <th class="px-5 py-3">Tenant Name</th>
                             <th class="px-5 py-3">Room</th>
-                            <th class="px-5 py-3">Due</th>
-                            <th class="px-5 py-3">Paid</th>
+                            <th class="px-5 py-3">Rent</th>
                             <th class="px-5 py-3">Status</th>
-                            <th class="px-5 py-3">Action</th>
+                            <th class="px-5 py-3">Paid</th>
+                            <th class="px-5 py-3">Actions</th>
                         </tr>
                     </thead>
-                    <tbody id="unpaid-table"></tbody>
+                    <tbody id="tenant-table"></tbody>
                 </table>
             </div>
 
             <!-- Mobile cards (hidden on desktop) -->
-            <div class="md:hidden p-3" id="unpaid-cards"></div>
+            <div class="md:hidden p-3" id="tenant-cards"></div>
 
-            <!-- All paid message -->
-            <p id="all-paid-msg" class="hidden text-center text-emerald-600 py-8 text-sm">🎉 All tenants have paid this month!</p>
+            <!-- Empty state -->
+            <p id="no-tenants-msg" class="hidden text-center text-gray-400 py-8 text-sm">No active tenants found.</p>
         </div>
     </main>
 
@@ -182,18 +135,59 @@
     <!-- Bottom navigation (mobile only) -->
     <nav class="bottom-nav md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-40 flex justify-around py-2 px-4">
         <a href="dashboard.html" class="bottom-nav-link active flex flex-col items-center gap-1 text-xs font-medium">
-            <span class="text-lg">📊</span><span>Dashboard</span>
+            <span class="text-lg">📊</span><span>Home</span>
         </a>
-        <a href="tenants.html" class="bottom-nav-link flex flex-col items-center gap-1 text-xs font-medium text-gray-400">
-            <span class="text-lg">👥</span><span>Tenants</span>
-        </a>
-        <a href="payments.html" class="bottom-nav-link flex flex-col items-center gap-1 text-xs font-medium text-gray-400">
-            <span class="text-lg">💰</span><span>Payments</span>
-        </a>
-        <a href="electricity.html" class="bottom-nav-link flex flex-col items-center gap-1 text-xs font-medium text-gray-400">
-            <span class="text-lg">⚡</span><span>Electricity</span>
+        <a href="notifications.html" class="bottom-nav-link flex flex-col items-center gap-1 text-xs font-medium text-gray-400">
+            <span class="text-lg">🔔</span><span>Notifications</span>
         </a>
     </nav>
+
+    <!-- Add Tenant Modal -->
+    <div id="add-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div class="modal-backdrop absolute inset-0" onclick="closeModal()"></div>
+        <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto z-10">
+            <div class="p-5 border-b border-gray-100 flex items-center justify-between">
+                <h2 class="font-bold text-gray-800 text-lg">Add Tenant</h2>
+                <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600 text-xl">&times;</button>
+            </div>
+            <form id="add-tenant-form" onsubmit="addTenant(event)" class="p-5 space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                    <input type="text" name="name" required
+                        class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                    <input type="tel" name="phone" required placeholder="10 digit mobile number"
+                        class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Room Number</label>
+                    <input type="text" name="room_number" required
+                        class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Monthly Rent</label>
+                    <input type="number" name="monthly_rent" required min="1"
+                        class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Rent Due Day (1-28)</label>
+                    <input type="number" name="rent_due_day" required min="1" max="28" value="1"
+                        class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Join Date</label>
+                    <input type="date" name="join_date" required
+                        class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
+                </div>
+                <button type="submit"
+                    class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-lg text-sm font-medium transition">
+                    Add Tenant
+                </button>
+            </form>
+        </div>
+    </div>
 
     <script src="js/api.js"></script>
     <script src="js/dashboard.js"></script>

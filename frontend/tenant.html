@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tenant Details - Rent Manager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>body { font-family: 'Inter', sans-serif; }</style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+    <!-- Sidebar Overlay (mobile) -->
+    <div id="sidebar-overlay" class="fixed inset-0 bg-black/40 z-40 hidden md:hidden" onclick="toggleSidebar()"></div>
+
+    <!-- Sidebar -->
+    <aside id="sidebar" class="fixed top-0 left-0 h-full w-64 bg-white border-r border-gray-200 z-50 transform -translate-x-full md:translate-x-0 transition-transform duration-200">
+        <div class="p-6 border-b border-gray-100">
+            <h1 class="text-xl font-bold text-gray-800">🏠 Rent Manager</h1>
+        </div>
+        <nav class="p-4 flex flex-col gap-1">
+            <a href="dashboard.html" class="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors">
+                <span class="text-lg">📊</span>
+                <span class="font-medium">Dashboard</span>
+            </a>
+            <a href="notifications.html" class="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors">
+                <span class="text-lg">🔔</span>
+                <span class="font-medium">Notifications</span>
+            </a>
+            <button onclick="logout()" class="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-600 hover:bg-red-50 hover:text-red-600 transition-colors mt-4">
+                <span class="text-lg">🚪</span>
+                <span class="font-medium">Logout</span>
+            </button>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="md:ml-64 pb-24 md:pb-6">
+
+        <!-- Mobile Header -->
+        <header class="sticky top-0 bg-white border-b border-gray-200 z-30 md:hidden">
+            <div class="flex items-center gap-3 px-4 py-3">
+                <a href="dashboard.html" class="flex items-center gap-1 text-gray-600 hover:text-gray-900 transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                    </svg>
+                    <span class="text-sm font-medium">Back</span>
+                </a>
+                <h2 id="mobile-tenant-name" class="text-base font-semibold text-gray-800 truncate">Tenant Details</h2>
+            </div>
+        </header>
+
+        <!-- Desktop Header -->
+        <header class="hidden md:block bg-white border-b border-gray-200">
+            <div class="flex items-center justify-between px-8 py-5">
+                <div class="flex items-center gap-3">
+                    <a href="dashboard.html" class="text-gray-400 hover:text-gray-600 transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                        </svg>
+                    </a>
+                    <h2 id="desktop-tenant-name" class="text-xl font-bold text-gray-800">Tenant Details</h2>
+                </div>
+            </div>
+        </header>
+
+        <!-- Page Content -->
+        <div class="p-4 md:p-8 max-w-4xl mx-auto flex flex-col gap-6">
+
+            <!-- Section 1: Tenant Info -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 md:p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold text-gray-800">Tenant Information</h3>
+                    <button onclick="openEditModal()" class="text-sm font-medium text-indigo-600 hover:text-indigo-700 transition-colors">Edit</button>
+                </div>
+                <div id="tenant-info" class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                    <div class="text-gray-400 text-center py-8 col-span-full">Loading tenant info...</div>
+                </div>
+                <div class="mt-5 pt-4 border-t border-gray-100">
+                    <button onclick="sendReminder()" class="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors">
+                        <span>📱</span> Send Reminder
+                    </button>
+                </div>
+            </div>
+
+            <!-- Section 2: This Month's Rent -->
+            <div id="rent-section" class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 md:p-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">This Month's Rent</h3>
+                <div id="rent-content">
+                    <div class="text-gray-400 text-center py-8">Loading rent info...</div>
+                </div>
+            </div>
+
+            <!-- Section 3: Electricity Bill -->
+            <div id="electricity-section" class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 md:p-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">Electricity Bill</h3>
+                <div id="electricity-content">
+                    <div class="text-gray-400 text-center py-8">Loading electricity info...</div>
+                </div>
+            </div>
+
+            <!-- Section 4: Payment History -->
+            <div id="payment-history" class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 md:p-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">Payment History</h3>
+                <div id="payment-history-content">
+                    <div class="text-gray-400 text-center py-8">Loading payment history...</div>
+                </div>
+            </div>
+
+            <!-- Section 5: Notification History -->
+            <div id="notification-history" class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 md:p-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">Notification History</h3>
+                <div id="notification-history-content">
+                    <div class="text-gray-400 text-center py-8">Loading notification history...</div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Bottom Nav (mobile) -->
+    <nav class="bottom-nav md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-40 flex justify-around py-2 px-4">
+        <a href="dashboard.html" class="bottom-nav-link flex flex-col items-center gap-1 text-xs font-medium text-gray-400">
+            <span class="text-lg">📊</span><span>Home</span>
+        </a>
+        <a href="notifications.html" class="bottom-nav-link flex flex-col items-center gap-1 text-xs font-medium text-gray-400">
+            <span class="text-lg">🔔</span><span>Notifications</span>
+        </a>
+    </nav>
+
+    <!-- Edit Tenant Modal -->
+    <div id="edit-modal" class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between p-5 border-b border-gray-100">
+                <h3 class="text-lg font-semibold text-gray-800">Edit Tenant</h3>
+                <button onclick="closeEditModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+            <form id="edit-form" onsubmit="saveEdit(event)" class="p-5 flex flex-col gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                    <input type="text" id="edit-name" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-shadow">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                    <input type="tel" id="edit-phone" required pattern="[6-9][0-9]{9}" maxlength="10" placeholder="10 digit Indian mobile number" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-shadow">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Room</label>
+                    <input type="text" id="edit-room" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-shadow">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Monthly Rent (₹)</label>
+                    <input type="number" id="edit-rent" required min="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-shadow">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Rent Due Day</label>
+                    <input type="number" id="edit-due-day" required min="1" max="28" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-shadow">
+                </div>
+                <div class="flex gap-3 pt-2">
+                    <button type="button" onclick="closeEditModal()" class="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors">Cancel</button>
+                    <button type="submit" class="flex-1 px-4 py-2.5 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Payment Modal -->
+    <div id="payment-modal" class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between p-5 border-b border-gray-100">
+                <h3 class="text-lg font-semibold text-gray-800">Record Payment</h3>
+                <button onclick="closePaymentModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+            <form id="payment-form" onsubmit="savePayment(event)" class="p-5 flex flex-col gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Amount (₹)</label>
+                    <input type="number" id="pay-amount" required min="1" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-shadow">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                    <input type="date" id="pay-date" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-shadow">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Method</label>
+                    <select id="pay-method" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-shadow bg-white">
+                        <option value="cash">Cash</option>
+                        <option value="upi">UPI</option>
+                        <option value="bank">Bank Transfer</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Note <span class="text-gray-400 font-normal">(optional)</span></label>
+                    <input type="text" id="pay-note" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-shadow" placeholder="Any remarks...">
+                </div>
+                <div class="flex gap-3 pt-2">
+                    <button type="button" onclick="closePaymentModal()" class="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors">Cancel</button>
+                    <button type="submit" class="flex-1 px-4 py-2.5 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-colors">Record Payment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Electricity Modal -->
+    <div id="electricity-modal" class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between p-5 border-b border-gray-100">
+                <h3 class="text-lg font-semibold text-gray-800">Add Electricity Reading</h3>
+                <button onclick="closeElectricityModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+            <form id="electricity-form" onsubmit="saveElectricity(event)" class="p-5 flex flex-col gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Previous Reading</label>
+                    <input type="number" id="elec-prev" required min="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition-shadow" oninput="updateEstimate()">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Current Reading</label>
+                    <input type="number" id="elec-curr" required min="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition-shadow" oninput="updateEstimate()">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Rate per Unit (₹)</label>
+                    <input type="number" id="elec-rate" required min="0" step="0.01" value="8" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition-shadow" oninput="updateEstimate()">
+                </div>
+                <div id="elec-estimate" class="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800 hidden">
+                    <span class="font-medium">Estimated Total:</span> <span id="elec-estimate-value">₹0</span>
+                    <span class="text-amber-600 block text-xs mt-1"><span id="elec-estimate-units">0</span> units</span>
+                </div>
+                <div class="flex gap-3 pt-2">
+                    <button type="button" onclick="closeElectricityModal()" class="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors">Cancel</button>
+                    <button type="submit" class="flex-1 px-4 py-2.5 bg-amber-500 text-white text-sm font-medium rounded-lg hover:bg-amber-600 transition-colors">Save Reading</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/tenant.js"></script>
+</body>
+</html>
