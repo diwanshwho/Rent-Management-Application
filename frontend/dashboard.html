@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Rent Manager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+
+        /* Bottom nav active state */
+        .bottom-nav-link.active { color: #4f46e5; }
+
+        /* Mobile card styles */
+        .mobile-card {
+            background: #fff;
+            border: 1px solid #f3f4f6;
+            border-radius: 0.75rem;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+        }
+        .mobile-card .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+        .mobile-card .card-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.35rem 0;
+            font-size: 0.875rem;
+        }
+        .mobile-card .card-row .label {
+            color: #6b7280;
+        }
+        .mobile-card .card-row .value {
+            font-medium: 500;
+            color: #1f2937;
+        }
+        .mobile-card .card-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.75rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid #f3f4f6;
+        }
+
+        /* Safe area for bottom nav */
+        .pb-safe { padding-bottom: 5rem; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div id="toast-container" class="fixed top-4 right-4 z-50"></div>
+
+    <!-- Sidebar (desktop only, hidden on mobile) -->
+    <aside id="sidebar" class="fixed left-0 top-0 h-full w-60 bg-white border-r border-gray-100 z-40 transform -translate-x-full md:translate-x-0 transition-transform">
+        <div class="p-5 border-b border-gray-100">
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 bg-indigo-600 rounded-lg flex items-center justify-center"><span class="text-lg">🏠</span></div>
+                <span class="font-bold text-gray-800">Rent Manager</span>
+            </div>
+        </div>
+        <nav class="p-3 space-y-1">
+            <a href="dashboard.html" class="nav-link active flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium">
+                <span>📊</span> Dashboard
+            </a>
+            <a href="tenants.html" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600">
+                <span>👥</span> Tenants
+            </a>
+            <a href="payments.html" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600">
+                <span>💰</span> Payments
+            </a>
+            <a href="electricity.html" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600">
+                <span>⚡</span> Electricity
+            </a>
+        </nav>
+        <div class="absolute bottom-4 left-3 right-3">
+            <button onclick="logout()" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-500 hover:bg-gray-100 transition">
+                <span>🚪</span> Logout
+            </button>
+        </div>
+    </aside>
+
+    <!-- Mobile header (sticky) -->
+    <header class="md:hidden bg-white border-b border-gray-100 p-4 flex items-center justify-between sticky top-0 z-30">
+        <button onclick="toggleSidebar()" class="text-gray-600 text-xl p-1">☰</button>
+        <span class="font-bold text-gray-800">Dashboard</span>
+        <button onclick="logout()" class="text-gray-500 text-sm p-1">Logout</button>
+    </header>
+
+    <!-- Main Content -->
+    <main class="md:ml-60 p-4 md:p-6 pb-safe md:pb-6">
+        <!-- Header with action buttons -->
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-3">
+            <div>
+                <h1 class="text-xl md:text-2xl font-bold text-gray-800">Dashboard</h1>
+                <p class="text-gray-500 text-sm" id="month-label"></p>
+            </div>
+            <div class="flex flex-col sm:flex-row gap-2">
+                <button onclick="generateRents()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 md:py-2 rounded-lg text-sm font-medium transition w-full sm:w-auto">
+                    Generate Rents
+                </button>
+                <button onclick="markOverdue()" class="bg-rose-500 hover:bg-rose-600 text-white px-4 py-2.5 md:py-2 rounded-lg text-sm font-medium transition w-full sm:w-auto">
+                    Mark Overdue
+                </button>
+            </div>
+        </div>
+
+        <!-- Stat Cards -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-6" id="stat-cards">
+            <div class="stat-card bg-white rounded-xl p-4 md:p-5 shadow-sm border border-gray-100">
+                <p class="text-xs md:text-sm text-gray-500">Active Tenants</p>
+                <p class="text-xl md:text-2xl font-bold text-gray-800 mt-1" id="stat-active">-</p>
+            </div>
+            <div class="stat-card bg-white rounded-xl p-4 md:p-5 shadow-sm border border-emerald-100 bg-emerald-50/50">
+                <p class="text-xs md:text-sm text-emerald-600">Paid</p>
+                <p class="text-xl md:text-2xl font-bold text-emerald-700 mt-1" id="stat-paid">-</p>
+            </div>
+            <div class="stat-card bg-white rounded-xl p-4 md:p-5 shadow-sm border border-amber-100 bg-amber-50/50">
+                <p class="text-xs md:text-sm text-amber-600">Pending</p>
+                <p class="text-xl md:text-2xl font-bold text-amber-700 mt-1" id="stat-pending">-</p>
+            </div>
+            <div class="stat-card bg-white rounded-xl p-4 md:p-5 shadow-sm border border-rose-100 bg-rose-50/50">
+                <p class="text-xs md:text-sm text-rose-600">Overdue</p>
+                <p class="text-xl md:text-2xl font-bold text-rose-700 mt-1" id="stat-overdue">-</p>
+            </div>
+        </div>
+
+        <!-- Collection Summary -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-4 mb-6">
+            <div class="bg-white rounded-xl p-4 md:p-5 shadow-sm border border-gray-100">
+                <h3 class="font-semibold text-gray-700 mb-1 text-sm md:text-base">💰 Collected This Month</h3>
+                <p class="text-2xl md:text-3xl font-bold text-emerald-600" id="total-collected">₹0</p>
+            </div>
+            <div class="bg-white rounded-xl p-4 md:p-5 shadow-sm border border-gray-100">
+                <h3 class="font-semibold text-gray-700 mb-1 text-sm md:text-base">⏳ Pending Amount</h3>
+                <p class="text-2xl md:text-3xl font-bold text-amber-600" id="total-pending">₹0</p>
+            </div>
+        </div>
+
+        <!-- Unpaid Tenants Section -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100">
+            <div class="p-4 md:p-5 border-b border-gray-100 flex items-center justify-between">
+                <h3 class="font-semibold text-gray-700 text-sm md:text-base">Unpaid Tenants</h3>
+                <button onclick="sendBulkReminders()" class="bg-amber-500 hover:bg-amber-600 text-white px-3 py-2 md:py-1.5 rounded-lg text-sm font-medium transition">
+                    📱 Remind All
+                </button>
+            </div>
+
+            <!-- Desktop table (hidden on mobile) -->
+            <div class="hidden md:block overflow-x-auto">
+                <table class="w-full">
+                    <thead>
+                        <tr class="text-left text-xs text-gray-500 uppercase border-b border-gray-100">
+                            <th class="px-5 py-3">Tenant</th>
+                            <th class="px-5 py-3">Room</th>
+                            <th class="px-5 py-3">Due</th>
+                            <th class="px-5 py-3">Paid</th>
+                            <th class="px-5 py-3">Status</th>
+                            <th class="px-5 py-3">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="unpaid-table"></tbody>
+                </table>
+            </div>
+
+            <!-- Mobile cards (hidden on desktop) -->
+            <div class="md:hidden p-3" id="unpaid-cards"></div>
+
+            <!-- All paid message -->
+            <p id="all-paid-msg" class="hidden text-center text-emerald-600 py-8 text-sm">🎉 All tenants have paid this month!</p>
+        </div>
+    </main>
+
+    <!-- Sidebar overlay for mobile -->
+    <div id="sidebar-overlay" class="hidden fixed inset-0 bg-black/30 z-30 md:hidden" onclick="toggleSidebar()"></div>
+
+    <!-- Bottom navigation (mobile only) -->
+    <nav class="bottom-nav md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-40 flex justify-around py-2 px-4">
+        <a href="dashboard.html" class="bottom-nav-link active flex flex-col items-center gap-1 text-xs font-medium">
+            <span class="text-lg">📊</span><span>Dashboard</span>
+        </a>
+        <a href="tenants.html" class="bottom-nav-link flex flex-col items-center gap-1 text-xs font-medium text-gray-400">
+            <span class="text-lg">👥</span><span>Tenants</span>
+        </a>
+        <a href="payments.html" class="bottom-nav-link flex flex-col items-center gap-1 text-xs font-medium text-gray-400">
+            <span class="text-lg">💰</span><span>Payments</span>
+        </a>
+        <a href="electricity.html" class="bottom-nav-link flex flex-col items-center gap-1 text-xs font-medium text-gray-400">
+            <span class="text-lg">⚡</span><span>Electricity</span>
+        </a>
+    </nav>
+
+    <script src="js/api.js"></script>
+    <script src="js/dashboard.js"></script>
+</body>
+</html>

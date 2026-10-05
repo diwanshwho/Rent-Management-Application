@@ -1,0 +1,117 @@
+/* Custom styles on top of Tailwind CDN */
+
+/* Sidebar active link */
+.nav-link.active {
+    background-color: rgba(99, 102, 241, 0.15);
+    color: #4f46e5;
+    border-right: 3px solid #4f46e5;
+}
+.nav-link:hover {
+    background-color: rgba(99, 102, 241, 0.08);
+}
+
+/* Bottom nav active */
+.bottom-nav-link.active {
+    color: #4f46e5;
+}
+.bottom-nav-link.active span:first-child {
+    transform: scale(1.15);
+}
+
+/* Status badges */
+.badge-paid { background-color: #d1fae5; color: #065f46; }
+.badge-pending { background-color: #fef3c7; color: #92400e; }
+.badge-overdue { background-color: #ffe4e6; color: #9f1239; }
+.badge-partial { background-color: #e0e7ff; color: #3730a3; }
+
+/* Cards */
+.stat-card {
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+/* Mobile card items */
+.mobile-card {
+    background: white;
+    border-radius: 12px;
+    padding: 16px;
+    border: 1px solid #f1f5f9;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    margin-bottom: 10px;
+}
+.mobile-card .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+.mobile-card .card-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 0;
+    font-size: 14px;
+}
+.mobile-card .card-row .label {
+    color: #94a3b8;
+}
+.mobile-card .card-row .value {
+    color: #334155;
+    font-weight: 500;
+}
+.mobile-card .card-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid #f1f5f9;
+}
+
+/* Modal backdrop */
+.modal-backdrop {
+    background-color: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(2px);
+}
+
+/* Toast notification */
+.toast {
+    animation: slideIn 0.3s ease;
+}
+@keyframes slideIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+/* Table rows - desktop only */
+.table-row:hover {
+    background-color: #f8fafc;
+}
+
+/* Loading spinner */
+.spinner {
+    border: 3px solid #e2e8f0;
+    border-top: 3px solid #4f46e5;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    animation: spin 0.6s linear infinite;
+}
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Mobile-first: pad bottom for bottom nav */
+@media (max-width: 767px) {
+    main {
+        padding-bottom: 80px !important;
+    }
+}
+
+/* Safe area for notch phones */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+    .bottom-nav {
+        padding-bottom: calc(8px + env(safe-area-inset-bottom));
+    }
+}
