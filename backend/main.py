@@ -78,6 +78,10 @@ if os.path.isdir(FRONTEND_DIR):
     app.mount("/css", StaticFiles(directory=os.path.join(FRONTEND_DIR, "css")), name="css")
     app.mount("/js", StaticFiles(directory=os.path.join(FRONTEND_DIR, "js")), name="js")
 
+    @app.get("/manifest.json")
+    def serve_manifest():
+        return FileResponse(os.path.join(FRONTEND_DIR, "manifest.json"), media_type="application/json")
+
     @app.get("/{page}.html")
     def serve_page(page: str):
         """Serve any .html page from the frontend folder."""

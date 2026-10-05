@@ -146,18 +146,17 @@ async function markOverdue() {
     }
 }
 
-// --- Send SMS reminder to a tenant ---
+// --- Send reminder to a tenant (opens phone SMS app) ---
 async function sendReminder(tenantId) {
     try {
-        const result = await apiPost("/notifications/send-reminder", { tenant_id: tenantId });
-        if (result) {
-            const msg = result.sms_status
-                ? `Reminder sent (SMS: ${result.sms_status})`
-                : (result.message || "Reminder sent");
-            showToast(msg, "success");
-        }
+        var result = await apiPost("/notifications/send-reminder", { tenant_id: tenantId });
+        var phone = result.phone;
+        var message = encodeURIComponent(result.message);
+
+        window.open("sms:" + phone + "?body=" + message, "_self");
+        showToast("Opening SMS app...", "success");
     } catch (err) {
-        showToast(err.message, "error");
+        showToast("Failed to create reminder", "error");
     }
 }
 

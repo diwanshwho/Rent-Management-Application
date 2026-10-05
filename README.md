@@ -5,7 +5,7 @@ A simple, clean rent management web app for PG (Paying Guest) accommodations.
 ## Features
 - 📋 Tenant management (add, edit, remove)
 - 💰 Rent tracking & payment recording
-- 📱 SMS reminders to tenants (Twilio)
+- 📱 SMS reminders (opens phone's SMS app with pre-filled message)
 - 📊 Dashboard with rent status overview
 - ⚡ Optional electricity bill management
 

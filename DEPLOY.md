@@ -70,9 +70,6 @@
    | `ADMIN_EMAIL`           | your-email@example.com                                                   |
    | `ADMIN_PASSWORD`        | pick a strong password                                                   |
    | `CORS_ORIGINS`          | *                                                                        |
-   | `TWILIO_ACCOUNT_SID`    | (leave empty for now)                                                    |
-   | `TWILIO_AUTH_TOKEN`     | (leave empty for now)                                                    |
-   | `TWILIO_PHONE_NUMBER`   | (leave empty for now)                                                    |
 
 6. Click **"Create Web Service"**
 7. Wait for the build to finish (3-5 min). Your app will be live at:
@@ -132,17 +129,11 @@ Render rebuilds and redeploys in ~3 minutes.
 
 ---
 
-## Setting Up SMS (Optional — later)
+## SMS Reminders — How It Works
 
-1. Sign up at https://www.twilio.com/try-twilio (free trial gives ~$15 credit)
-2. Get your **Account SID**, **Auth Token**, and a **phone number**
-3. **Important**: On free trial, verify each tenant's phone number in Twilio Console → Verified Caller IDs
-4. In Render → your service → **Environment** → update the 3 Twilio variables:
-   - `TWILIO_ACCOUNT_SID`
-   - `TWILIO_AUTH_TOKEN`
-   - `TWILIO_PHONE_NUMBER` (format: `+1234567890`)
-5. Click **"Save Changes"** → Render auto-redeploys with SMS enabled
-6. Test: Go to your app → click any tenant → click **"Send Reminder"**
+No setup needed! When you click **"Send Reminder"** on a tenant's page, the app opens your phone's native SMS app with the tenant's number and a pre-filled message. You just hit Send.
+
+This works on both Android and iPhone — no Twilio, no API keys, no cost.
 
 ---
 
@@ -154,8 +145,7 @@ Render rebuilds and redeploys in ~3 minutes.
 | Database error       | Verify `DATABASE_URL` in environment. Test the Neon connection string.     |
 | Can't log in         | Double-check `ADMIN_EMAIL` and `ADMIN_PASSWORD` in environment variables.  |
 | Pages not loading    | Make sure `frontend/` folder is in the GitHub repo.                        |
-| SMS says "not configured" | Set all 3 Twilio env vars in Render and redeploy.                    |
-| SMS says "failed"    | On Twilio free trial, verify the recipient's number first.                 |
+| SMS app not opening  | Use on your phone (not desktop). Works best from "Add to Home Screen".     |
 | App slow on first load | Free tier cold start (~30s). UptimeRobot keeps it warm after that.       |
 | `psycopg` error      | Already fixed in code — `database.py` forces `psycopg2` driver.           |
 
@@ -168,4 +158,3 @@ Render rebuilds and redeploys in ~3 minutes.
 | Render          | 750 hours/month (enough for 1 app always-on) |
 | Neon PostgreSQL | 0.5 GB storage, 190 hours compute |
 | UptimeRobot     | 50 monitors, 5-min interval      |
-| Twilio SMS      | Free trial (~$15 credit)         |

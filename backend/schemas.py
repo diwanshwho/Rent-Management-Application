@@ -226,6 +226,7 @@ class NotificationOut(BaseModel):
     message: str
     status: str
     sent_at: Optional[str] = None
+    created_at: Optional[str] = None
     tenant_name: Optional[str] = None
 
     class Config:

@@ -2,34 +2,6 @@
 requireAuth();
 
 /**
- * Load SMS configuration status and display badge
- */
-async function loadSmsStatus() {
-    const statusEl = document.getElementById('sms-status');
-    try {
-        const data = await apiGet('/notifications/sms-status');
-        if (data.configured) {
-            statusEl.innerHTML = `
-                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">
-                    <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-                    SMS Active
-                </span>`;
-        } else {
-            statusEl.innerHTML = `
-                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-rose-100 text-rose-700">
-                    <span class="w-2 h-2 rounded-full bg-rose-500"></span>
-                    SMS Not Configured &mdash; reminders are saved but not sent
-                </span>`;
-        }
-    } catch (err) {
-        statusEl.innerHTML = `
-            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-gray-100 text-gray-500">
-                SMS status unknown
-            </span>`;
-    }
-}
-
-/**
  * Format an ISO date string into a readable format.
  * Returns relative time for recent dates (e.g. "2 hours ago")
  * and absolute format for older dates (e.g. "Oct 5, 2026 2:30 PM").
@@ -85,7 +57,7 @@ function renderNotificationCard(notif) {
     const statusLabel = notif.status ? notif.status.charAt(0).toUpperCase() + notif.status.slice(1) : 'Unknown';
     const tenantName = notif.tenant_name || 'Unknown Tenant';
     const message = notif.message || '';
-    const dateStr = formatDate(notif.sent_at);
+    const dateStr = formatDate(notif.sent_at || notif.created_at);
 
     return `
         <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
@@ -150,5 +122,4 @@ function toggleSidebar() {
 }
 
 // Initialize page
-loadSmsStatus();
 loadNotifications();

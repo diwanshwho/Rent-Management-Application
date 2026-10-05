@@ -7,7 +7,6 @@ db_url = DATABASE_URL
 if db_url.startswith("postgresql://"):
     db_url = db_url.replace("postgresql://", "postgresql+psycopg2://", 1)
 
-
 # SQLite needs check_same_thread=False; PostgreSQL doesn't
 connect_args = {}
 if db_url.startswith("sqlite"):

@@ -6,6 +6,5 @@ python-dotenv
 pyjwt
 bcrypt
 python-multipart
-twilio
 httpx
 psycopg2-binary

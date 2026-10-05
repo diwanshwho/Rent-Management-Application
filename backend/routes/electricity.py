@@ -29,6 +29,21 @@ def list_bills(
     return query.order_by(ElectricityBill.year.desc(), ElectricityBill.month.desc()).all()
 
 
+@router.get("/last-reading/{room_number}")
+def last_reading(
+    room_number: str,
+    db: Session = Depends(get_db),
+    _user: User = Depends(get_current_user),
+):
+    """Return the most recent electricity bill for a room (for auto-populating prev reading)."""
+    bill = db.query(ElectricityBill).filter(
+        ElectricityBill.room_number == room_number
+    ).order_by(ElectricityBill.year.desc(), ElectricityBill.month.desc()).first()
+    if not bill:
+        return {"curr_reading": None, "rate_per_unit": 8.0}
+    return {"curr_reading": bill.curr_reading, "rate_per_unit": bill.rate_per_unit}
+
+
 @router.post("/", response_model=ElectricityOut, status_code=status.HTTP_201_CREATED)
 def add_reading(
     data: ElectricityCreate,

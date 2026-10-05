@@ -1,0 +1,9 @@
+{
+    "name": "Kiraya App",
+    "short_name": "KirayaApp",
+    "start_url": "/dashboard.html",
+    "display": "standalone",
+    "background_color": "#f9fafb",
+    "theme_color": "#4f46e5",
+    "description": "PG Rent Management App"
+}

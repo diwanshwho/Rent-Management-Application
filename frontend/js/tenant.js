@@ -247,10 +247,11 @@ async function loadNotificationHistory() {
             return;
         }
 
-        const sorted = notifications.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        const sorted = notifications.sort((a, b) => new Date(b.sent_at || b.created_at || 0) - new Date(a.sent_at || a.created_at || 0));
 
         container.innerHTML = `<div class="flex flex-col gap-3">${sorted.map(n => {
-            const date = n.created_at ? new Date(n.created_at).toLocaleDateString("en-IN", { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "-";
+            const rawDate = n.sent_at || n.created_at;
+            const date = rawDate ? new Date(rawDate).toLocaleDateString("en-IN", { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "-";
             const message = n.message || "-";
             const truncated = message.length > 100 ? message.substring(0, 100) + "..." : message;
             const status = n.status || "unknown";
@@ -352,7 +353,7 @@ async function savePayment(e) {
 }
 
 // ─── Electricity Modal ──────────────────────────────────────────────
-function openElectricityModal() {
+async function openElectricityModal() {
     document.getElementById("elec-prev").value = "";
     document.getElementById("elec-curr").value = "";
     document.getElementById("elec-rate").value = "8";
@@ -360,6 +361,19 @@ function openElectricityModal() {
     const modal = document.getElementById("electricity-modal");
     modal.classList.remove("hidden");
     modal.classList.add("flex");
+
+    // Auto-populate previous reading from the last bill
+    if (tenant && tenant.room_number) {
+        try {
+            var last = await apiGet("/electricity/last-reading/" + encodeURIComponent(tenant.room_number));
+            if (last && last.curr_reading !== null) {
+                document.getElementById("elec-prev").value = last.curr_reading;
+                document.getElementById("elec-rate").value = last.rate_per_unit || "8";
+            }
+        } catch (err) {
+            // Ignore — user can type manually
+        }
+    }
 }
 
 function closeElectricityModal() {
@@ -415,21 +429,21 @@ async function saveElectricity(e) {
     }
 }
 
-// ─── Send Reminder ──────────────────────────────────────────────────
+// ─── Send Reminder (opens phone SMS app) ───────────────────────────
 async function sendReminder() {
     if (!tenant) return;
     try {
-        const result = await apiPost("/notifications/send-reminder", { tenant_id: parseInt(tenantId) });
-        if (result && result.status === "sent") {
-            showToast("Reminder sent successfully", "success");
-        } else if (result && result.status === "failed") {
-            showToast("Reminder failed to send: " + (result.detail || "SMS delivery failed"), "error");
-        } else {
-            showToast("Reminder queued", "success");
-        }
+        var result = await apiPost("/notifications/send-reminder", { tenant_id: parseInt(tenantId) });
+        var phone = result.phone || tenant.phone;
+        var message = encodeURIComponent(result.message);
+
+        // Open phone SMS app with number + message pre-filled
+        window.open("sms:" + phone + "?body=" + message, "_self");
+
+        showToast("Opening SMS app...", "success");
         await loadNotificationHistory();
     } catch (err) {
-        showToast("Failed to send reminder", "error");
+        showToast("Failed to create reminder", "error");
     }
 }
 
