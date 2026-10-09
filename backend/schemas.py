@@ -27,9 +27,46 @@ class LoginRequest(BaseModel):
     password: str
 
 
+class SignupRequest(BaseModel):
+    name: str
+    email: str
+    password: str
+
+    @field_validator("name")
+    @classmethod
+    def name_not_empty(cls, v):
+        if not v or not v.strip():
+            raise ValueError("Name cannot be empty")
+        return v.strip()
+
+    @field_validator("email")
+    @classmethod
+    def email_valid(cls, v):
+        if not v or "@" not in v:
+            raise ValueError("Invalid email address")
+        return v.strip().lower()
+
+    @field_validator("password")
+    @classmethod
+    def password_min_length(cls, v):
+        if len(v) < 6:
+            raise ValueError("Password must be at least 6 characters")
+        return v
+
+
+class TenantLoginRequest(BaseModel):
+    phone: str
+
+    @field_validator("phone")
+    @classmethod
+    def phone_valid(cls, v):
+        return validate_indian_phone(v)
+
+
 class Token(BaseModel):
     access_token: str
     token_type: str = "bearer"
+    tenant_id: Optional[int] = None
 
 
 class UserOut(BaseModel):

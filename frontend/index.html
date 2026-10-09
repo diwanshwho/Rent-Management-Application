@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rent Manager - Login</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="css/style.css?v=2">
+    <link rel="stylesheet" href="css/style.css?v=3">
     <link rel="manifest" href="/manifest.json">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>body { font-family: 'Inter', sans-serif; }</style>
@@ -20,64 +20,181 @@
                 <span class="text-3xl">🏠</span>
             </div>
             <h1 class="text-2xl font-bold text-gray-800">Rent Manager</h1>
-            <p class="text-gray-500 mt-1">Sign in to manage your PG</p>
+            <p class="text-gray-500 mt-1">Sign in to continue</p>
         </div>
 
         <!-- Login Card -->
-        <div class="bg-white rounded-2xl shadow-lg p-8">
-            <form id="login-form" class="space-y-5">
+        <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
+            <!-- Tabs -->
+            <div class="flex border-b border-gray-100">
+                <button onclick="switchTab('admin-login')" id="tab-admin-login" class="flex-1 py-3 text-sm font-medium text-center transition-colors border-b-2 border-indigo-600 text-indigo-700">
+                    Admin Login
+                </button>
+                <button onclick="switchTab('tenant-login')" id="tab-tenant-login" class="flex-1 py-3 text-sm font-medium text-center transition-colors border-b-2 border-transparent text-gray-500 hover:text-gray-700">
+                    Tenant Login
+                </button>
+                <button onclick="switchTab('signup')" id="tab-signup" class="flex-1 py-3 text-sm font-medium text-center transition-colors border-b-2 border-transparent text-gray-500 hover:text-gray-700">
+                    Sign Up
+                </button>
+            </div>
+
+            <!-- Admin Login Form -->
+            <form id="form-admin-login" class="p-6 space-y-5" onsubmit="handleAdminLogin(event)">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                    <input type="email" id="email" required
+                    <input type="email" id="login-email" required
                         class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
                         placeholder="admin@rentmanager.com">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                    <input type="password" id="password" required
+                    <input type="password" id="login-password" required
                         class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
                         placeholder="••••••••">
                 </div>
-                <button type="submit" id="login-btn"
+                <button type="submit" id="btn-admin-login"
                     class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-lg transition flex items-center justify-center gap-2">
                     Sign In
                 </button>
+                <p id="admin-login-error" class="text-rose-500 text-sm text-center hidden"></p>
             </form>
-            <p id="error-msg" class="text-rose-500 text-sm text-center mt-3 hidden"></p>
+
+            <!-- Tenant Login Form -->
+            <form id="form-tenant-login" class="p-6 space-y-5 hidden" onsubmit="handleTenantLogin(event)">
+                <p class="text-sm text-gray-500 text-center">Enter your registered mobile number to view your rent details.</p>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Mobile Number</label>
+                    <input type="tel" id="tenant-phone" required placeholder="10 digit mobile number"
+                        class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition">
+                </div>
+                <button type="submit" id="btn-tenant-login"
+                    class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2.5 rounded-lg transition flex items-center justify-center gap-2">
+                    View My Rent
+                </button>
+                <p id="tenant-login-error" class="text-rose-500 text-sm text-center hidden"></p>
+            </form>
+
+            <!-- Signup Form -->
+            <form id="form-signup" class="p-6 space-y-5 hidden" onsubmit="handleSignup(event)">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                    <input type="text" id="signup-name" required
+                        class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
+                        placeholder="Your name">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                    <input type="email" id="signup-email" required
+                        class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
+                        placeholder="you@example.com">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                    <input type="password" id="signup-password" required minlength="6"
+                        class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
+                        placeholder="Min 6 characters">
+                </div>
+                <button type="submit" id="btn-signup"
+                    class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-lg transition flex items-center justify-center gap-2">
+                    Create Account
+                </button>
+                <p id="signup-error" class="text-rose-500 text-sm text-center hidden"></p>
+            </form>
         </div>
     </div>
 
-    <script src="js/api.js?v=2"></script>
+    <script src="js/api.js?v=3"></script>
     <script>
-        // Redirect if already logged in
         if (getToken()) window.location.href = "dashboard.html";
 
-        document.getElementById("login-form").addEventListener("submit", async (e) => {
-            e.preventDefault();
-            const btn = document.getElementById("login-btn");
-            const errMsg = document.getElementById("error-msg");
-            errMsg.classList.add("hidden");
+        function switchTab(tab) {
+            document.querySelectorAll('[id^="form-"]').forEach(f => f.classList.add("hidden"));
+            document.querySelectorAll('[id^="tab-"]').forEach(t => {
+                t.classList.remove("border-indigo-600", "text-indigo-700");
+                t.classList.add("border-transparent", "text-gray-500");
+            });
+            document.querySelectorAll('[id$="-error"]').forEach(e => e.classList.add("hidden"));
 
+            document.getElementById("form-" + tab).classList.remove("hidden");
+            var activeTab = document.getElementById("tab-" + tab);
+            activeTab.classList.add("border-indigo-600", "text-indigo-700");
+            activeTab.classList.remove("border-transparent", "text-gray-500");
+        }
+
+        async function handleAdminLogin(e) {
+            e.preventDefault();
+            var btn = document.getElementById("btn-admin-login");
+            var errEl = document.getElementById("admin-login-error");
+            errEl.classList.add("hidden");
             btn.innerHTML = '<div class="spinner mx-auto"></div>';
             btn.disabled = true;
-
             try {
-                const data = await apiPost("/auth/login", {
-                    email: document.getElementById("email").value,
-                    password: document.getElementById("password").value,
+                var data = await apiPost("/auth/login", {
+                    email: document.getElementById("login-email").value,
+                    password: document.getElementById("login-password").value,
                 });
                 if (data && data.access_token) {
                     setToken(data.access_token);
                     window.location.href = "dashboard.html";
                 }
             } catch (err) {
-                errMsg.textContent = err.message;
-                errMsg.classList.remove("hidden");
+                errEl.textContent = err.message;
+                errEl.classList.remove("hidden");
             } finally {
                 btn.innerHTML = "Sign In";
                 btn.disabled = false;
             }
-        });
+        }
+
+        async function handleTenantLogin(e) {
+            e.preventDefault();
+            var btn = document.getElementById("btn-tenant-login");
+            var errEl = document.getElementById("tenant-login-error");
+            errEl.classList.add("hidden");
+            btn.innerHTML = '<div class="spinner mx-auto"></div>';
+            btn.disabled = true;
+            try {
+                var data = await apiPost("/auth/tenant-login", {
+                    phone: document.getElementById("tenant-phone").value.trim(),
+                });
+                if (data && data.access_token) {
+                    setToken(data.access_token);
+                    window.location.href = "tenant.html?id=" + data.tenant_id;
+                }
+            } catch (err) {
+                errEl.textContent = err.message;
+                errEl.classList.remove("hidden");
+            } finally {
+                btn.innerHTML = "View My Rent";
+                btn.disabled = false;
+            }
+        }
+
+        async function handleSignup(e) {
+            e.preventDefault();
+            var btn = document.getElementById("btn-signup");
+            var errEl = document.getElementById("signup-error");
+            errEl.classList.add("hidden");
+            btn.innerHTML = '<div class="spinner mx-auto"></div>';
+            btn.disabled = true;
+            try {
+                var data = await apiPost("/auth/signup", {
+                    name: document.getElementById("signup-name").value.trim(),
+                    email: document.getElementById("signup-email").value.trim(),
+                    password: document.getElementById("signup-password").value,
+                });
+                if (data && data.access_token) {
+                    setToken(data.access_token);
+                    window.location.href = "dashboard.html";
+                }
+            } catch (err) {
+                errEl.textContent = err.message;
+                errEl.classList.remove("hidden");
+            } finally {
+                btn.innerHTML = "Create Account";
+                btn.disabled = false;
+            }
+        }
     </script>
 </body>
 </html>
