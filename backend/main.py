@@ -86,11 +86,13 @@ if os.path.isdir(FRONTEND_DIR):
     def serve_page(page: str):
         """Serve any .html page from the frontend folder."""
         file_path = os.path.join(FRONTEND_DIR, f"{page}.html")
-        if os.path.isfile(file_path):
-            return FileResponse(file_path)
-        return FileResponse(os.path.join(FRONTEND_DIR, "index.html"))
+        if not os.path.isfile(file_path):
+            file_path = os.path.join(FRONTEND_DIR, "index.html")
+        headers = {"Cache-Control": "no-cache, no-store, must-revalidate"}
+        return FileResponse(file_path, headers=headers)
 
     @app.get("/")
     def serve_root():
         """Serve the login page at root."""
-        return FileResponse(os.path.join(FRONTEND_DIR, "index.html"))
+        headers = {"Cache-Control": "no-cache, no-store, must-revalidate"}
+        return FileResponse(os.path.join(FRONTEND_DIR, "index.html"), headers=headers)
