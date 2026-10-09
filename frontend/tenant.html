@@ -17,23 +17,25 @@
 
     <!-- Sidebar -->
     <aside id="sidebar" class="fixed top-0 left-0 h-full w-64 bg-white border-r border-gray-200 z-50 transform -translate-x-full md:translate-x-0 transition-transform duration-200">
-        <div class="p-6 border-b border-gray-100">
-            <h1 class="text-xl font-bold text-gray-800">🏠 Rent Manager</h1>
+        <div class="p-5 border-b border-gray-100">
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 bg-indigo-600 rounded-lg flex items-center justify-center"><span class="text-lg">🏠</span></div>
+                <span class="text-lg font-bold text-gray-800">Rent Manager</span>
+            </div>
         </div>
-        <nav class="p-4 flex flex-col gap-1">
-            <a href="dashboard.html" class="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors">
-                <span class="text-lg">📊</span>
-                <span class="font-medium">Dashboard</span>
+        <nav class="p-4 space-y-1">
+            <a href="dashboard.html" class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors">
+                <span class="text-lg">📊</span> Dashboard
             </a>
-            <a href="notifications.html" class="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors">
-                <span class="text-lg">🔔</span>
-                <span class="font-medium">Notifications</span>
+            <a href="notifications.html" class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors">
+                <span class="text-lg">🔔</span> Notifications
             </a>
-            <button onclick="logout()" class="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-600 hover:bg-red-50 hover:text-red-600 transition-colors mt-4">
-                <span class="text-lg">🚪</span>
-                <span class="font-medium">Logout</span>
-            </button>
         </nav>
+        <div class="absolute bottom-4 left-4 right-4">
+            <button onclick="logout()" class="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-gray-500 hover:bg-red-50 hover:text-red-600 transition-colors">
+                <span class="text-lg">🚪</span> Logout
+            </button>
+        </div>
     </aside>
 
     <!-- Main Content -->
@@ -122,7 +124,7 @@
 
             <!-- Section 4: Payment History -->
             <div id="payment-history" class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 md:p-6">
-                <h3 class="text-lg font-semibold text-gray-800 mb-4">Payment History</h3>
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">Transaction History</h3>
                 <div id="payment-history-content">
                     <div class="text-gray-400 text-center py-8">Loading payment history...</div>
                 </div>

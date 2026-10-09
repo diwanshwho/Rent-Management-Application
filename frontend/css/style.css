@@ -102,6 +102,15 @@
     to { transform: rotate(360deg); }
 }
 
+/* Fix date input width on mobile (browser defaults can add extra width) */
+input[type="date"] {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
 /* Mobile-first: pad bottom for bottom nav */
 @media (max-width: 767px) {
     main {

@@ -12,6 +12,13 @@ let currentYear = now.getFullYear();
 function updateMonthLabel() {
     document.getElementById("month-label").textContent =
         `${monthNames[currentMonth]} ${currentYear}`;
+    const btn = document.getElementById("btn-next-month");
+    if (btn) {
+        const atCurrent = currentYear === now.getFullYear() && currentMonth === now.getMonth() + 1;
+        btn.disabled = atCurrent;
+        btn.classList.toggle("opacity-30", atCurrent);
+        btn.classList.toggle("cursor-not-allowed", atCurrent);
+    }
 }
 
 function prevMonth() {
@@ -23,8 +30,13 @@ function prevMonth() {
 }
 
 function nextMonth() {
-    currentMonth++;
-    if (currentMonth > 12) { currentMonth = 1; currentYear++; }
+    const today = new Date();
+    let newMonth = currentMonth + 1;
+    let newYear = currentYear;
+    if (newMonth > 12) { newMonth = 1; newYear++; }
+    if (newYear > today.getFullYear() || (newYear === today.getFullYear() && newMonth > today.getMonth() + 1)) return;
+    currentMonth = newMonth;
+    currentYear = newYear;
     updateMonthLabel();
     loadDashboard();
     loadTenants();

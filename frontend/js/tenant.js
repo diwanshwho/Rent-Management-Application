@@ -223,51 +223,94 @@ async function loadElectricity() {
     }
 }
 
-// ─── Load Payment History ───────────────────────────────────────────
+// ─── Load Transaction History (Payments + Electricity) ─────────────
 async function loadPaymentHistory() {
     const container = document.getElementById("payment-history-content");
     try {
-        const payments = await apiGet(`/rents/payments?tenant_id=${tenantId}`);
-        if (!Array.isArray(payments) || payments.length === 0) {
-            container.innerHTML = '<div class="text-gray-400 text-center py-6">No payments recorded yet.</div>';
+        const [payments, electricityBills] = await Promise.all([
+            apiGet(`/rents/payments?tenant_id=${tenantId}`),
+            apiGet(`/electricity/?tenant_id=${tenantId}`)
+        ]);
+
+        const timeline = [];
+
+        if (Array.isArray(payments)) {
+            payments.forEach(p => {
+                timeline.push({
+                    type: 'payment',
+                    sortDate: new Date(p.date || p.created_at),
+                    data: p
+                });
+            });
+        }
+
+        if (Array.isArray(electricityBills)) {
+            electricityBills.forEach(b => {
+                timeline.push({
+                    type: 'electricity',
+                    sortDate: new Date(b.year, b.month - 1, 1),
+                    data: b
+                });
+            });
+        }
+
+        if (timeline.length === 0) {
+            container.innerHTML = '<div class="text-gray-400 text-center py-6">No transactions yet.</div>';
             return;
         }
 
-        const sorted = payments.sort((a, b) => new Date(b.date || b.created_at) - new Date(a.date || a.created_at));
+        timeline.sort((a, b) => b.sortDate - a.sortDate);
 
-        container.innerHTML = `<div class="flex flex-col gap-3">${sorted.map(p => {
-            const date = p.date || p.created_at;
-            const formattedDate = date ? new Date(date).toLocaleDateString("en-IN", { year: "numeric", month: "short", day: "numeric" }) : "-";
-            const monthLabel = p.month && p.year ? `${monthNames[p.month]} ${p.year}` : "-";
-            const method = p.method || "-";
-            const note = p.note || "-";
+        container.innerHTML = `<div class="flex flex-col gap-3">${timeline.map(item => {
+            if (item.type === 'payment') {
+                const p = item.data;
+                const date = p.date || p.created_at;
+                const formattedDate = date ? new Date(date).toLocaleDateString("en-IN", { year: "numeric", month: "short", day: "numeric" }) : "-";
+                const method = p.method || "-";
+                const note = p.note || "";
 
-            return `
-                <div class="mobile-card border border-gray-100 rounded-lg p-4 hover:bg-gray-50 transition-colors">
-                    <div class="card-header flex items-center justify-between mb-2">
-                        <span class="font-semibold text-emerald-600">${formatMoney(p.amount)}</span>
-                        <div class="flex items-center gap-2">
-                            <span class="text-gray-400 text-sm">${formattedDate}</span>
-                            <button onclick="event.stopPropagation(); deletePayment(${p.id})" class="text-red-400 hover:text-red-600 text-sm" title="Delete payment">🗑️</button>
+                return `
+                    <div class="border border-gray-100 rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="flex items-center gap-2">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">Payment</span>
+                                <span class="font-semibold text-emerald-600">${formatMoney(p.amount)}</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="text-gray-400 text-sm">${formattedDate}</span>
+                                <button onclick="event.stopPropagation(); deletePayment(${p.id})" class="text-red-400 hover:text-red-600 text-sm" title="Delete payment">🗑️</button>
+                            </div>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+                            <span class="text-gray-500">Method: <span class="text-gray-800 capitalize">${method}</span></span>
+                            ${note ? `<span class="text-gray-500">Note: <span class="text-gray-800">${note}</span></span>` : ''}
                         </div>
                     </div>
-                    <div class="card-row flex items-center justify-between text-sm py-1">
-                        <span class="label text-gray-500">Month</span>
-                        <span class="value text-gray-800">${monthLabel}</span>
+                `;
+            } else {
+                const b = item.data;
+                const units = (b.curr_reading || 0) - (b.prev_reading || 0);
+
+                return `
+                    <div class="border border-amber-200 rounded-lg p-4 bg-amber-50/30 hover:bg-amber-50 transition-colors">
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="flex items-center gap-2">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700">Electricity</span>
+                                <span class="font-semibold text-amber-600">${formatMoney(b.total_amount)}</span>
+                            </div>
+                            <span class="text-gray-400 text-sm">${monthNames[b.month]} ${b.year}</span>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+                            <span class="text-gray-500">Reading: <span class="text-gray-800">${b.prev_reading} → ${b.curr_reading}</span></span>
+                            <span class="text-gray-500">Units: <span class="text-gray-800">${units}</span></span>
+                            <span class="text-gray-500">Rate: <span class="text-gray-800">₹${b.rate_per_unit}/unit</span></span>
+                        </div>
                     </div>
-                    <div class="card-row flex items-center justify-between text-sm py-1">
-                        <span class="label text-gray-500">Method</span>
-                        <span class="value text-gray-800 capitalize">${method}</span>
-                    </div>
-                    <div class="card-row flex items-center justify-between text-sm py-1">
-                        <span class="label text-gray-500">Note</span>
-                        <span class="value text-gray-800">${note}</span>
-                    </div>
-                </div>
-            `;
+                `;
+            }
         }).join("")}</div>`;
     } catch (err) {
-        container.innerHTML = '<div class="text-red-500 text-center py-4">Failed to load payment history.</div>';
+        container.innerHTML = '<div class="text-red-500 text-center py-4">Failed to load transaction history.</div>';
     }
 }
 
