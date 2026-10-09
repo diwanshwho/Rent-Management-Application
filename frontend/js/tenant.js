@@ -4,6 +4,23 @@ const params = new URLSearchParams(window.location.search);
 const tenantId = params.get("id");
 if (!tenantId) window.location.href = "dashboard.html";
 
+const isTenantRole = getRole() === "tenant";
+
+// Tenant users: restrict access to only their own page
+if (isTenantRole && getTenantAccessId() !== tenantId) {
+    window.location.href = "tenant.html?id=" + getTenantAccessId();
+}
+
+// Hide admin-only UI elements for tenants
+if (isTenantRole) {
+    document.querySelectorAll('[onclick="openEditModal()"]').forEach(function(el) { el.style.display = "none"; });
+    var deactBtn = document.getElementById("btn-deactivate");
+    if (deactBtn) deactBtn.style.display = "none";
+    document.querySelectorAll('[onclick="sendReminder()"]').forEach(function(el) { el.style.display = "none"; });
+    // Hide sidebar nav and bottom nav links to dashboard/notifications
+    document.querySelectorAll('a[href="dashboard.html"], a[href="notifications.html"]').forEach(function(el) { el.style.display = "none"; });
+}
+
 const now = new Date();
 let currentMonth = now.getMonth() + 1;
 let currentYear = now.getFullYear();

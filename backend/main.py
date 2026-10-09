@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
+from sqlalchemy import inspect, text
 
 from config import CORS_ORIGINS, ADMIN_EMAIL, ADMIN_PASSWORD
 from database import engine, SessionLocal, Base
@@ -50,8 +51,20 @@ def health():
 
 
 @app.on_event("startup")
-def create_admin():
-    """Create default admin user on first run."""
+def startup():
+    """Run migrations and create default admin user."""
+    # Migration: add owner_id column to tenants if it doesn't exist
+    insp = inspect(engine)
+    if insp.has_table("tenants"):
+        columns = [c["name"] for c in insp.get_columns("tenants")]
+        if "owner_id" not in columns:
+            with engine.connect() as conn:
+                conn.execute(text("ALTER TABLE tenants ADD COLUMN owner_id INTEGER"))
+                conn.execute(text("UPDATE tenants SET owner_id = 1"))
+                conn.commit()
+            logger.info("Migration: added owner_id to tenants table")
+
+    # Create default admin user
     db = SessionLocal()
     try:
         existing = db.query(User).filter(User.email == ADMIN_EMAIL).first()

@@ -1,4 +1,4 @@
-requireAuth();
+requireAdmin();
 
 const monthNames = [
     "", "January", "February", "March", "April", "May", "June",

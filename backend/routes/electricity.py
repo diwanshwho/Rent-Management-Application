@@ -17,9 +17,13 @@ def list_bills(
     month: Optional[int] = None,
     year: Optional[int] = None,
     db: Session = Depends(get_db),
-    _user: User = Depends(get_current_user),
+    user: User = Depends(get_current_user),
 ):
-    query = db.query(ElectricityBill)
+    query = db.query(ElectricityBill).join(Tenant, ElectricityBill.tenant_id == Tenant.id)
+    if user._role == "admin":
+        query = query.filter(Tenant.owner_id == user._owner_id)
+    else:
+        query = query.filter(ElectricityBill.tenant_id == user._tenant_access_id)
     if tenant_id:
         query = query.filter(ElectricityBill.tenant_id == tenant_id)
     if month:
@@ -33,9 +37,15 @@ def list_bills(
 def last_reading(
     tenant_id: int,
     db: Session = Depends(get_db),
-    _user: User = Depends(get_current_user),
+    user: User = Depends(get_current_user),
 ):
-    """Return the most recent electricity bill for a tenant (for auto-populating prev reading)."""
+    if user._role == "tenant" and user._tenant_access_id != tenant_id:
+        raise HTTPException(status_code=403, detail="Access denied")
+    if user._role == "admin":
+        tenant = db.query(Tenant).filter(Tenant.id == tenant_id, Tenant.owner_id == user._owner_id).first()
+        if not tenant:
+            raise HTTPException(status_code=404, detail="Tenant not found")
+
     bill = db.query(ElectricityBill).filter(
         ElectricityBill.tenant_id == tenant_id
     ).order_by(ElectricityBill.year.desc(), ElectricityBill.month.desc()).first()
@@ -48,14 +58,15 @@ def last_reading(
 def add_reading(
     data: ElectricityCreate,
     db: Session = Depends(get_db),
-    _user: User = Depends(get_current_user),
+    user: User = Depends(get_current_user),
 ):
-    # Validate tenant exists
-    tenant = db.query(Tenant).filter(Tenant.id == data.tenant_id).first()
+    if user._role == "tenant":
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    tenant = db.query(Tenant).filter(Tenant.id == data.tenant_id, Tenant.owner_id == user._owner_id).first()
     if not tenant:
         raise HTTPException(status_code=404, detail="Tenant not found")
 
-    # Check for duplicate (same tenant + month + year)
     existing = db.query(ElectricityBill).filter(
         ElectricityBill.tenant_id == data.tenant_id,
         ElectricityBill.month == data.month,
@@ -82,7 +93,6 @@ def add_reading(
     )
     db.add(bill)
 
-    # Update the corresponding rent record with electricity amount
     rent = db.query(Rent).filter(
         Rent.tenant_id == data.tenant_id, Rent.month == data.month, Rent.year == data.year
     ).first()
@@ -103,13 +113,17 @@ def add_reading(
 def delete_bill(
     bill_id: int,
     db: Session = Depends(get_db),
-    _user: User = Depends(get_current_user),
+    user: User = Depends(get_current_user),
 ):
-    bill = db.query(ElectricityBill).filter(ElectricityBill.id == bill_id).first()
+    if user._role == "tenant":
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    bill = db.query(ElectricityBill).join(Tenant, ElectricityBill.tenant_id == Tenant.id).filter(
+        ElectricityBill.id == bill_id, Tenant.owner_id == user._owner_id,
+    ).first()
     if not bill:
         raise HTTPException(status_code=404, detail="Bill not found")
 
-    # Reverse the electricity amount from the rent record
     tenant = db.query(Tenant).filter(Tenant.id == bill.tenant_id).first()
     if tenant:
         rent = db.query(Rent).filter(

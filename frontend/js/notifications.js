@@ -1,5 +1,5 @@
 // Notifications page logic
-requireAuth();
+requireAdmin();
 
 /**
  * Format an ISO date string into a readable format.

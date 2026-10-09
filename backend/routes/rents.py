@@ -12,6 +12,13 @@ from auth import get_current_user
 router = APIRouter(prefix="/rents", tags=["Rents"])
 
 
+def _tenant_filter(query, user):
+    """Apply owner or tenant filter to a query that already joins Tenant."""
+    if user._role == "admin":
+        return query.filter(Tenant.owner_id == user._owner_id)
+    return query.filter(Rent.tenant_id == user._tenant_access_id)
+
+
 # --- Dashboard ---
 
 @router.get("/dashboard", response_model=DashboardStats)
@@ -19,17 +26,21 @@ def dashboard_stats(
     month: Optional[int] = None,
     year: Optional[int] = None,
     db: Session = Depends(get_db),
-    _user: User = Depends(get_current_user),
+    user: User = Depends(get_current_user),
 ):
+    if user._role == "tenant":
+        raise HTTPException(status_code=403, detail="Access denied")
+
     today = date.today()
     m = month or today.month
     y = year or today.year
 
-    total_tenants = db.query(Tenant).count()
-    active_tenants = db.query(Tenant).filter(Tenant.is_active == True).count()
+    total_tenants = db.query(Tenant).filter(Tenant.owner_id == user._owner_id).count()
+    active_tenants = db.query(Tenant).filter(Tenant.owner_id == user._owner_id, Tenant.is_active == True).count()
 
     rents = db.query(Rent).join(Tenant).filter(
-        Rent.month == m, Rent.year == y, Tenant.is_active == True
+        Rent.month == m, Rent.year == y,
+        Tenant.is_active == True, Tenant.owner_id == user._owner_id,
     ).all()
 
     paid = [r for r in rents if r.status == RentStatus.PAID]
@@ -58,9 +69,12 @@ def list_rents(
     year: Optional[int] = None,
     status_filter: Optional[str] = None,
     db: Session = Depends(get_db),
-    _user: User = Depends(get_current_user),
+    user: User = Depends(get_current_user),
 ):
-    query = db.query(Rent).join(Tenant).filter(Tenant.is_active == True)
+    query = db.query(Rent).join(Tenant)
+    query = _tenant_filter(query, user)
+    if user._role == "admin":
+        query = query.filter(Tenant.is_active == True)
     if month:
         query = query.filter(Rent.month == month)
     if year:
@@ -70,7 +84,6 @@ def list_rents(
 
     rents = query.order_by(Rent.due_date.desc()).all()
 
-    # Attach tenant names
     result = []
     for r in rents:
         out = RentOut.model_validate(r)
@@ -83,15 +96,16 @@ def list_rents(
 def generate_rents(
     data: RentGenerate,
     db: Session = Depends(get_db),
-    _user: User = Depends(get_current_user),
+    user: User = Depends(get_current_user),
 ):
-    """Generate rent entries for all active tenants for a given month/year."""
-    tenants = db.query(Tenant).filter(Tenant.is_active == True).all()
+    if user._role == "tenant":
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    tenants = db.query(Tenant).filter(Tenant.is_active == True, Tenant.owner_id == user._owner_id).all()
     created = 0
     skipped = 0
 
     for tenant in tenants:
-        # Skip if rent already exists for this tenant/month/year
         existing = db.query(Rent).filter(
             Rent.tenant_id == tenant.id,
             Rent.month == data.month,
@@ -101,7 +115,7 @@ def generate_rents(
             skipped += 1
             continue
 
-        due_day = min(tenant.rent_due_day, 28)  # Avoid invalid dates
+        due_day = min(tenant.rent_due_day, 28)
         rent = Rent(
             tenant_id=tenant.id,
             month=data.month,
@@ -121,9 +135,11 @@ def update_rent(
     rent_id: int,
     data: RentUpdate,
     db: Session = Depends(get_db),
-    _user: User = Depends(get_current_user),
+    user: User = Depends(get_current_user),
 ):
-    rent = db.query(Rent).filter(Rent.id == rent_id).first()
+    if user._role == "tenant":
+        raise HTTPException(status_code=403, detail="Access denied")
+    rent = db.query(Rent).join(Tenant).filter(Rent.id == rent_id, Tenant.owner_id == user._owner_id).first()
     if not rent:
         raise HTTPException(status_code=404, detail="Rent record not found")
     for key, value in data.model_dump(exclude_unset=True).items():
@@ -138,14 +154,17 @@ def update_rent(
 @router.post("/mark-overdue")
 def mark_overdue(
     db: Session = Depends(get_db),
-    _user: User = Depends(get_current_user),
+    user: User = Depends(get_current_user),
 ):
-    """Mark all past-due pending rents as overdue."""
+    if user._role == "tenant":
+        raise HTTPException(status_code=403, detail="Access denied")
+
     today = date.today()
     rents = db.query(Rent).join(Tenant).filter(
         Rent.status.in_([RentStatus.PENDING, RentStatus.PARTIAL]),
         Rent.due_date < today,
         Tenant.is_active == True,
+        Tenant.owner_id == user._owner_id,
     ).all()
 
     count = 0
@@ -162,9 +181,13 @@ def mark_overdue(
 def list_payments(
     tenant_id: Optional[int] = None,
     db: Session = Depends(get_db),
-    _user: User = Depends(get_current_user),
+    user: User = Depends(get_current_user),
 ):
-    query = db.query(Payment).join(Tenant, Payment.tenant_id == Tenant.id).filter(Tenant.is_active == True)
+    query = db.query(Payment).join(Tenant, Payment.tenant_id == Tenant.id)
+    if user._role == "admin":
+        query = query.filter(Tenant.owner_id == user._owner_id, Tenant.is_active == True)
+    else:
+        query = query.filter(Payment.tenant_id == user._tenant_access_id)
     if tenant_id:
         query = query.filter(Payment.tenant_id == tenant_id)
     payments = query.order_by(Payment.date.desc()).all()
@@ -181,22 +204,24 @@ def list_payments(
 def record_payment(
     data: PaymentCreate,
     db: Session = Depends(get_db),
-    _user: User = Depends(get_current_user),
+    user: User = Depends(get_current_user),
 ):
-    # Validate rent exists
+    if user._role == "tenant":
+        raise HTTPException(status_code=403, detail="Access denied")
+
     rent = db.query(Rent).filter(Rent.id == data.rent_id).first()
     if not rent:
         raise HTTPException(status_code=404, detail="Rent record not found")
-
-    # Validate tenant matches
     if rent.tenant_id != data.tenant_id:
         raise HTTPException(status_code=400, detail="Tenant doesn't match this rent record")
 
-    # Record payment
+    tenant = db.query(Tenant).filter(Tenant.id == data.tenant_id, Tenant.owner_id == user._owner_id).first()
+    if not tenant:
+        raise HTTPException(status_code=403, detail="Access denied")
+
     payment = Payment(**data.model_dump())
     db.add(payment)
 
-    # Update rent status
     rent.amount_paid += data.amount
     if rent.amount_paid >= rent.amount_due:
         rent.status = RentStatus.PAID
@@ -216,13 +241,17 @@ def record_payment(
 def delete_payment(
     payment_id: int,
     db: Session = Depends(get_db),
-    _user: User = Depends(get_current_user),
+    user: User = Depends(get_current_user),
 ):
-    payment = db.query(Payment).filter(Payment.id == payment_id).first()
+    if user._role == "tenant":
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    payment = db.query(Payment).join(Tenant, Payment.tenant_id == Tenant.id).filter(
+        Payment.id == payment_id, Tenant.owner_id == user._owner_id,
+    ).first()
     if not payment:
         raise HTTPException(status_code=404, detail="Payment not found")
 
-    # Reverse the payment from the rent record
     rent = db.query(Rent).filter(Rent.id == payment.rent_id).first()
     if rent:
         rent.amount_paid = max(0, rent.amount_paid - payment.amount)

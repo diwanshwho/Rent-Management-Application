@@ -42,13 +42,19 @@ def get_current_user(
             user = db.query(User).filter(User.id == user_id).first()
             if user is None:
                 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
+            user._role = "admin"
+            user._owner_id = user.id
+            user._tenant_access_id = None
             return user
 
         if tenant_id:
             tenant = db.query(Tenant).filter(Tenant.id == tenant_id).first()
             if tenant is None:
                 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Tenant not found")
-            user = User(id=tenant_id, email=f"tenant-{tenant_id}", name=tenant.name, hashed_password="")
+            user = User(id=0, email=f"tenant-{tenant_id}", name=tenant.name, hashed_password="")
+            user._role = "tenant"
+            user._owner_id = None
+            user._tenant_access_id = tenant_id
             return user
 
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")

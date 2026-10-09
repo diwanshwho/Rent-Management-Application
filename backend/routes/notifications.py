@@ -25,14 +25,15 @@ def _build_reminder_message(tenant: Tenant, rent: Rent = None) -> str:
 def send_reminder(
     data: SendReminder,
     db: Session = Depends(get_db),
-    _user: User = Depends(get_current_user),
+    user: User = Depends(get_current_user),
 ):
-    """Generate a reminder message for a tenant. Returns phone + message for the SMS app."""
-    tenant = db.query(Tenant).filter(Tenant.id == data.tenant_id).first()
+    if user._role == "tenant":
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    tenant = db.query(Tenant).filter(Tenant.id == data.tenant_id, Tenant.owner_id == user._owner_id).first()
     if not tenant:
         raise HTTPException(status_code=404, detail="Tenant not found")
 
-    # Find latest unpaid rent
     rent = db.query(Rent).filter(
         Rent.tenant_id == tenant.id,
         Rent.status.in_([RentStatus.PENDING, RentStatus.OVERDUE, RentStatus.PARTIAL]),
@@ -40,7 +41,6 @@ def send_reminder(
 
     message = data.message or _build_reminder_message(tenant, rent)
 
-    # Save notification record
     notification = Notification(
         tenant_id=tenant.id,
         message=message,
@@ -61,9 +61,13 @@ def send_reminder(
 def list_notifications(
     tenant_id: Optional[int] = None,
     db: Session = Depends(get_db),
-    _user: User = Depends(get_current_user),
+    user: User = Depends(get_current_user),
 ):
-    query = db.query(Notification)
+    query = db.query(Notification).join(Tenant, Notification.tenant_id == Tenant.id)
+    if user._role == "admin":
+        query = query.filter(Tenant.owner_id == user._owner_id)
+    else:
+        query = query.filter(Notification.tenant_id == user._tenant_access_id)
     if tenant_id:
         query = query.filter(Notification.tenant_id == tenant_id)
     notifs = query.order_by(Notification.created_at.desc()).limit(100).all()

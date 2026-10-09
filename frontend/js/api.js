@@ -10,9 +10,27 @@ function setToken(token) {
     localStorage.setItem("token", token);
 }
 
+/** Get/set user role */
+function getRole() {
+    return localStorage.getItem("role") || "admin";
+}
+function setRole(role) {
+    localStorage.setItem("role", role);
+}
+
+/** Get/set tenant ID (for tenant login) */
+function getTenantAccessId() {
+    return localStorage.getItem("tenant_access_id");
+}
+function setTenantAccessId(id) {
+    localStorage.setItem("tenant_access_id", id);
+}
+
 /** Clear token and redirect to login */
 function logout() {
     localStorage.removeItem("token");
+    localStorage.removeItem("role");
+    localStorage.removeItem("tenant_access_id");
     window.location.href = "index.html";
 }
 
@@ -20,6 +38,18 @@ function logout() {
 function requireAuth() {
     if (!getToken()) {
         window.location.href = "index.html";
+    }
+}
+
+/** Check if logged in as admin, redirect tenants to their page */
+function requireAdmin() {
+    if (!getToken()) {
+        window.location.href = "index.html";
+        return;
+    }
+    if (getRole() === "tenant") {
+        var tid = getTenantAccessId();
+        window.location.href = tid ? "tenant.html?id=" + tid : "index.html";
     }
 }
 

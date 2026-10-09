@@ -105,7 +105,13 @@
 
     <script src="js/api.js?v=3"></script>
     <script>
-        if (getToken()) window.location.href = "dashboard.html";
+        if (getToken()) {
+            if (getRole() === "tenant" && getTenantAccessId()) {
+                window.location.href = "tenant.html?id=" + getTenantAccessId();
+            } else {
+                window.location.href = "dashboard.html";
+            }
+        }
 
         function switchTab(tab) {
             document.querySelectorAll('[id^="form-"]').forEach(f => f.classList.add("hidden"));
@@ -135,6 +141,7 @@
                 });
                 if (data && data.access_token) {
                     setToken(data.access_token);
+                    setRole("admin");
                     window.location.href = "dashboard.html";
                 }
             } catch (err) {
@@ -159,6 +166,8 @@
                 });
                 if (data && data.access_token) {
                     setToken(data.access_token);
+                    setRole("tenant");
+                    setTenantAccessId(data.tenant_id);
                     window.location.href = "tenant.html?id=" + data.tenant_id;
                 }
             } catch (err) {
@@ -185,6 +194,7 @@
                 });
                 if (data && data.access_token) {
                     setToken(data.access_token);
+                    setRole("admin");
                     window.location.href = "dashboard.html";
                 }
             } catch (err) {

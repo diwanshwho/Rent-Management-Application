@@ -53,6 +53,7 @@ class Tenant(Base):
     rent_due_day = Column(Integer, default=1)  # Day of month rent is due
     join_date = Column(Date, nullable=False)
     is_active = Column(Boolean, default=True)
+    owner_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     rents = relationship("Rent", back_populates="tenant", cascade="all, delete-orphan")
