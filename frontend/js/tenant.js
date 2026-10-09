@@ -17,8 +17,20 @@ if (isTenantRole) {
     var deactBtn = document.getElementById("btn-deactivate");
     if (deactBtn) deactBtn.style.display = "none";
     document.querySelectorAll('[onclick="sendReminder()"]').forEach(function(el) { el.style.display = "none"; });
-    // Hide sidebar nav and bottom nav links to dashboard/notifications
-    document.querySelectorAll('a[href="dashboard.html"], a[href="notifications.html"]').forEach(function(el) { el.style.display = "none"; });
+    // Hide sidebar nav links to dashboard/notifications
+    document.querySelectorAll('nav a[href="dashboard.html"], nav a[href="notifications.html"]').forEach(function(el) { el.style.display = "none"; });
+    // Replace mobile header "Back" with Logout
+    var mobileBackLink = document.querySelector('header.md\\:hidden a[href="dashboard.html"]');
+    if (mobileBackLink) {
+        var logoutBtn = document.createElement("button");
+        logoutBtn.onclick = logout;
+        logoutBtn.className = "flex items-center gap-1 text-gray-600 hover:text-gray-900 transition-colors";
+        logoutBtn.innerHTML = '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg><span class="text-sm font-medium">Logout</span>';
+        mobileBackLink.replaceWith(logoutBtn);
+    }
+    // Hide empty bottom nav
+    var bottomNav = document.querySelector('.bottom-nav');
+    if (bottomNav) bottomNav.style.display = "none";
 }
 
 const now = new Date();
@@ -105,7 +117,9 @@ async function loadRent() {
             : null;
 
         if (!currentRent) {
-            container.innerHTML = `
+            container.innerHTML = isTenantRole
+                ? '<div class="text-center py-6"><p class="text-gray-500">No rent generated for ' + monthNames[currentMonth] + ' ' + currentYear + '</p></div>'
+                : `
                 <div class="text-center py-6">
                     <p class="text-gray-500 mb-4">No rent generated for ${monthNames[currentMonth]} ${currentYear}</p>
                     <button onclick="generateRentForTenant()" class="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors">
@@ -158,7 +172,7 @@ async function loadRent() {
                     <p class="mt-1">${statusBadge(status)}</p>
                 </div>
             </div>
-            ${remaining > 0 ? `
+            ${!isTenantRole && remaining > 0 ? `
             <button onclick="openPaymentModal()" class="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-colors">
                 Record Payment
             </button>
@@ -192,7 +206,9 @@ async function loadElectricity() {
         const reading = Array.isArray(readings) && readings.length > 0 ? readings[0] : null;
 
         if (!reading) {
-            container.innerHTML = `
+            container.innerHTML = isTenantRole
+                ? '<div class="text-center py-6"><p class="text-gray-500">No reading for ' + monthNames[currentMonth] + ' ' + currentYear + '</p></div>'
+                : `
                 <div class="text-center py-6">
                     <p class="text-gray-500 mb-4">No reading for ${monthNames[currentMonth]} ${currentYear}</p>
                     <button onclick="openElectricityModal()" class="inline-flex items-center gap-2 px-4 py-2 bg-amber-500 text-white text-sm font-medium rounded-lg hover:bg-amber-600 transition-colors">
@@ -230,9 +246,9 @@ async function loadElectricity() {
                 </div>
             </div>
             <div class="mt-3 flex gap-2">
-                <button onclick="deleteElectricity(${reading.id})" class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors">
+                ${!isTenantRole ? `<button onclick="deleteElectricity(${reading.id})" class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors">
                     🗑️ Delete Reading
-                </button>
+                </button>` : ''}
             </div>
         `;
     } catch (err) {
@@ -295,7 +311,7 @@ async function loadPaymentHistory() {
                             </div>
                             <div class="flex items-center gap-2">
                                 <span class="text-gray-400 text-sm">${formattedDate}</span>
-                                <button onclick="event.stopPropagation(); deletePayment(${p.id})" class="text-red-400 hover:text-red-600 text-sm" title="Delete payment">🗑️</button>
+                                ${!isTenantRole ? `<button onclick="event.stopPropagation(); deletePayment(${p.id})" class="text-red-400 hover:text-red-600 text-sm" title="Delete payment">🗑️</button>` : ''}
                             </div>
                         </div>
                         <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
@@ -601,7 +617,7 @@ async function loadElectricityHistory() {
                         <span class="font-semibold text-gray-800">${monthNames[b.month]} ${b.year}</span>
                         <div class="flex items-center gap-2">
                             <span class="font-semibold text-amber-600">${formatMoney(b.total_amount)}</span>
-                            <button onclick="event.stopPropagation(); deleteElectricity(${b.id})" class="text-red-400 hover:text-red-600 text-sm" title="Delete reading">🗑️</button>
+                            ${!isTenantRole ? `<button onclick="event.stopPropagation(); deleteElectricity(${b.id})" class="text-red-400 hover:text-red-600 text-sm" title="Delete reading">🗑️</button>` : ''}
                         </div>
                     </div>
                     <div class="grid grid-cols-3 gap-2 text-sm">
