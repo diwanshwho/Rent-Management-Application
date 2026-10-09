@@ -43,14 +43,15 @@
 
         <!-- Mobile Header -->
         <header class="sticky top-0 bg-white border-b border-gray-200 z-30 md:hidden">
-            <div class="flex items-center gap-3 px-4 py-3">
-                <a href="dashboard.html" class="flex items-center gap-1 text-gray-600 hover:text-gray-900 transition-colors">
+            <div class="flex items-center justify-between px-4 py-3">
+                <a href="dashboard.html" id="mobile-back-link" class="flex items-center gap-1 text-gray-600 hover:text-gray-900 transition-colors">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
                     </svg>
                     <span class="text-sm font-medium">Back</span>
                 </a>
                 <h2 id="mobile-tenant-name" class="text-base font-semibold text-gray-800 truncate">Tenant Details</h2>
+                <button onclick="logout()" id="mobile-logout-btn" class="text-gray-500 text-sm font-medium hidden">Logout</button>
             </div>
         </header>
 
@@ -58,7 +59,7 @@
         <header class="hidden md:block bg-white border-b border-gray-200">
             <div class="flex items-center justify-between px-8 py-5">
                 <div class="flex items-center gap-3">
-                    <a href="dashboard.html" class="text-gray-400 hover:text-gray-600 transition-colors">
+                    <a href="dashboard.html" id="desktop-back-link" class="text-gray-400 hover:text-gray-600 transition-colors">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
                         </svg>
@@ -75,12 +76,12 @@
             <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 md:p-6">
                 <div class="flex items-center justify-between mb-4">
                     <h3 class="text-lg font-semibold text-gray-800">Tenant Information</h3>
-                    <button onclick="openEditModal()" class="text-sm font-medium text-indigo-600 hover:text-indigo-700 transition-colors">Edit</button>
+                    <button onclick="openEditModal()" id="btn-edit-tenant" class="text-sm font-medium text-indigo-600 hover:text-indigo-700 transition-colors">Edit</button>
                 </div>
                 <div id="tenant-info" class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                     <div class="text-gray-400 text-center py-8 col-span-full">Loading tenant info...</div>
                 </div>
-                <div class="mt-5 pt-4 border-t border-gray-100 flex flex-wrap gap-2">
+                <div id="admin-actions" class="mt-5 pt-4 border-t border-gray-100 flex flex-wrap gap-2">
                     <button onclick="sendReminder()" class="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors">
                         <span>📱</span> Send Reminder
                     </button>

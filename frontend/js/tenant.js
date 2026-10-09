@@ -2,7 +2,13 @@ requireAuth();
 
 const params = new URLSearchParams(window.location.search);
 const tenantId = params.get("id");
-if (!tenantId) window.location.href = "dashboard.html";
+if (!tenantId) {
+    if (getRole() === "tenant" && getTenantAccessId()) {
+        window.location.href = "tenant.html?id=" + getTenantAccessId();
+    } else {
+        window.location.href = "dashboard.html";
+    }
+}
 
 const isTenantRole = getRole() === "tenant";
 
@@ -13,21 +19,25 @@ if (isTenantRole && getTenantAccessId() !== tenantId) {
 
 // Hide admin-only UI elements for tenants
 if (isTenantRole) {
-    document.querySelectorAll('[onclick="openEditModal()"]').forEach(function(el) { el.style.display = "none"; });
-    var deactBtn = document.getElementById("btn-deactivate");
-    if (deactBtn) deactBtn.style.display = "none";
-    document.querySelectorAll('[onclick="sendReminder()"]').forEach(function(el) { el.style.display = "none"; });
+    // Hide entire admin actions bar (Send Reminder + Deactivate)
+    var adminActions = document.getElementById("admin-actions");
+    if (adminActions) adminActions.style.display = "none";
+    // Hide Edit button
+    var editBtn = document.getElementById("btn-edit-tenant");
+    if (editBtn) editBtn.style.display = "none";
+    // Hide notification history (tenants don't send reminders)
+    var notifHistory = document.getElementById("notification-history");
+    if (notifHistory) notifHistory.style.display = "none";
     // Hide sidebar nav links to dashboard/notifications
     document.querySelectorAll('nav a[href="dashboard.html"], nav a[href="notifications.html"]').forEach(function(el) { el.style.display = "none"; });
-    // Replace mobile header "Back" with Logout
-    var mobileBackLink = document.querySelector('header.md\\:hidden a[href="dashboard.html"]');
-    if (mobileBackLink) {
-        var logoutBtn = document.createElement("button");
-        logoutBtn.onclick = logout;
-        logoutBtn.className = "flex items-center gap-1 text-gray-600 hover:text-gray-900 transition-colors";
-        logoutBtn.innerHTML = '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg><span class="text-sm font-medium">Logout</span>';
-        mobileBackLink.replaceWith(logoutBtn);
-    }
+    // Mobile header: hide back link, show logout on right
+    var mobileBack = document.getElementById("mobile-back-link");
+    if (mobileBack) mobileBack.style.display = "none";
+    var mobileLogout = document.getElementById("mobile-logout-btn");
+    if (mobileLogout) mobileLogout.classList.remove("hidden");
+    // Desktop header: hide back arrow to dashboard
+    var desktopBack = document.getElementById("desktop-back-link");
+    if (desktopBack) desktopBack.style.display = "none";
     // Hide empty bottom nav
     var bottomNav = document.querySelector('.bottom-nav');
     if (bottomNav) bottomNav.style.display = "none";
@@ -96,10 +106,10 @@ async function loadTenant() {
             </div>
         `;
 
-        // Hide deactivate button if already inactive
+        // Hide deactivate button if already inactive or if tenant role
         var deactivateBtn = document.getElementById("btn-deactivate");
         if (deactivateBtn) {
-            deactivateBtn.style.display = isActive ? "" : "none";
+            deactivateBtn.style.display = (isActive && !isTenantRole) ? "" : "none";
         }
     } catch (err) {
         document.getElementById("tenant-info").innerHTML =
@@ -643,8 +653,13 @@ function prevMonth() {
 }
 
 function nextMonth() {
-    currentMonth++;
-    if (currentMonth > 12) { currentMonth = 1; currentYear++; }
+    var today = new Date();
+    var newMonth = currentMonth + 1;
+    var newYear = currentYear;
+    if (newMonth > 12) { newMonth = 1; newYear++; }
+    if (newYear > today.getFullYear() || (newYear === today.getFullYear() && newMonth > today.getMonth() + 1)) return;
+    currentMonth = newMonth;
+    currentYear = newYear;
     updateMonthLabel();
     loadRent();
     loadElectricity();
@@ -654,6 +669,15 @@ function updateMonthLabel() {
     var label = monthNames[currentMonth] + " " + currentYear;
     var el = document.getElementById("month-nav-label");
     if (el) el.textContent = label;
+    // Dim forward button when at current month
+    var nextBtn = document.querySelector('#rent-section button[onclick="nextMonth()"]');
+    if (nextBtn) {
+        var today = new Date();
+        var atCurrent = currentYear === today.getFullYear() && currentMonth === today.getMonth() + 1;
+        nextBtn.disabled = atCurrent;
+        nextBtn.classList.toggle("opacity-30", atCurrent);
+        nextBtn.classList.toggle("cursor-not-allowed", atCurrent);
+    }
 }
 
 // ─── Sidebar Toggle ─────────────────────────────────────────────────
