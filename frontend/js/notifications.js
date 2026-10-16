@@ -1,11 +1,8 @@
-// Notifications page logic
 requireAdmin();
 
-/**
- * Format an ISO date string into a readable format.
- * Returns relative time for recent dates (e.g. "2 hours ago")
- * and absolute format for older dates (e.g. "Oct 5, 2026 2:30 PM").
- */
+renderLangSwitcher(document.getElementById("lang-switcher-sidebar"));
+renderLangSwitcher(document.getElementById("lang-switcher-mobile"));
+
 function formatDate(isoString) {
     if (!isoString) return '';
 
@@ -16,14 +13,13 @@ function formatDate(isoString) {
     const diffHours = Math.floor(diffMs / 3600000);
     const diffDays = Math.floor(diffMs / 86400000);
 
-    // Relative time for recent notifications
-    if (diffMinutes < 1) return 'Just now';
-    if (diffMinutes < 60) return `${diffMinutes} min ago`;
-    if (diffHours < 24) return `${diffHours} hour${diffHours !== 1 ? 's' : ''} ago`;
-    if (diffDays < 7) return `${diffDays} day${diffDays !== 1 ? 's' : ''} ago`;
+    if (diffMinutes < 1) return getLang() === 'hi' ? 'अभी' : 'Just now';
+    if (diffMinutes < 60) return getLang() === 'hi' ? diffMinutes + ' मिनट पहले' : diffMinutes + ' min ago';
+    if (diffHours < 24) return getLang() === 'hi' ? diffHours + ' घंटे पहले' : diffHours + ' hour' + (diffHours !== 1 ? 's' : '') + ' ago';
+    if (diffDays < 7) return getLang() === 'hi' ? diffDays + ' दिन पहले' : diffDays + ' day' + (diffDays !== 1 ? 's' : '') + ' ago';
 
-    // Absolute format for older dates
-    return date.toLocaleDateString('en-US', {
+    const locale = getLang() === 'hi' ? 'hi-IN' : 'en-US';
+    return date.toLocaleDateString(locale, {
         month: 'short',
         day: 'numeric',
         year: 'numeric',
@@ -33,9 +29,6 @@ function formatDate(isoString) {
     });
 }
 
-/**
- * Get the appropriate badge class for a notification status.
- */
 function getStatusBadgeClass(status) {
     switch ((status || '').toLowerCase()) {
         case 'sent':
@@ -49,13 +42,10 @@ function getStatusBadgeClass(status) {
     }
 }
 
-/**
- * Render a single notification card.
- */
 function renderNotificationCard(notif) {
     const badgeClass = getStatusBadgeClass(notif.status);
     const statusLabel = notif.status ? notif.status.charAt(0).toUpperCase() + notif.status.slice(1) : 'Unknown';
-    const tenantName = notif.tenant_name || 'Unknown Tenant';
+    const tenantName = notif.tenant_name || (getLang() === 'hi' ? 'अज्ञात किरायेदार' : 'Unknown Tenant');
     const message = notif.message || '';
     const dateStr = formatDate(notif.sent_at || notif.created_at);
 
@@ -74,9 +64,6 @@ function renderNotificationCard(notif) {
         </div>`;
 }
 
-/**
- * Load all notifications and render the card list.
- */
 async function loadNotifications() {
     const listEl = document.getElementById('notif-list');
     try {
@@ -86,8 +73,8 @@ async function loadNotifications() {
             listEl.innerHTML = `
                 <div class="text-center py-16">
                     <div class="text-4xl mb-3">🔕</div>
-                    <h3 class="text-lg font-medium text-gray-700 mb-1">No notifications yet</h3>
-                    <p class="text-sm text-gray-500">Send reminders from tenant pages.</p>
+                    <h3 class="text-lg font-medium text-gray-700 mb-1">${t('no_notifications_title')}</h3>
+                    <p class="text-sm text-gray-500">${t('no_notifications_desc')}</p>
                 </div>`;
             return;
         }
@@ -97,16 +84,13 @@ async function loadNotifications() {
         listEl.innerHTML = `
             <div class="text-center py-16">
                 <div class="text-4xl mb-3">⚠️</div>
-                <h3 class="text-lg font-medium text-gray-700 mb-1">Failed to load notifications</h3>
-                <p class="text-sm text-gray-500">${err.message || 'Please try again later.'}</p>
+                <h3 class="text-lg font-medium text-gray-700 mb-1">${t('failed_load_notifications')}</h3>
+                <p class="text-sm text-gray-500">${err.message || t('failed_load_notifications_desc')}</p>
             </div>`;
-        showToast('Failed to load notifications', 'error');
+        showToast(t('failed_load_notifications'), 'error');
     }
 }
 
-/**
- * Toggle mobile sidebar visibility.
- */
 function toggleSidebar() {
     const sidebar = document.getElementById('sidebar');
     const overlay = document.getElementById('sidebar-overlay');
@@ -121,5 +105,8 @@ function toggleSidebar() {
     }
 }
 
-// Initialize page
+document.addEventListener("langchange", function() {
+    loadNotifications();
+});
+
 loadNotifications();

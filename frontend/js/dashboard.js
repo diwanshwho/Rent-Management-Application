@@ -1,17 +1,15 @@
 requireAdmin();
 
-const monthNames = [
-    "", "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December"
-];
-
 const now = new Date();
 let currentMonth = now.getMonth() + 1;
 let currentYear = now.getFullYear();
 
+renderLangSwitcher(document.getElementById("lang-switcher-sidebar"));
+renderLangSwitcher(document.getElementById("lang-switcher-mobile"));
+
 function updateMonthLabel() {
-    document.getElementById("month-label").textContent =
-        `${monthNames[currentMonth]} ${currentYear}`;
+    var mn = getMonthNames();
+    document.getElementById("month-label").textContent = mn[currentMonth] + " " + currentYear;
     const btn = document.getElementById("btn-next-month");
     if (btn) {
         const atCurrent = currentYear === now.getFullYear() && currentMonth === now.getMonth() + 1;
@@ -44,7 +42,11 @@ function nextMonth() {
 
 updateMonthLabel();
 
-// --- Load dashboard stats ---
+document.addEventListener("langchange", function() {
+    updateMonthLabel();
+    loadTenants();
+});
+
 async function loadDashboard() {
     try {
         const stats = await apiGet(`/rents/dashboard?month=${currentMonth}&year=${currentYear}`);
@@ -57,14 +59,12 @@ async function loadDashboard() {
         document.getElementById("total-collected").textContent = formatMoney(stats.total_collected);
         document.getElementById("total-pending").textContent = formatMoney(stats.total_pending);
     } catch (err) {
-        showToast("Failed to load stats", "error");
+        showToast(t("toast_failed_load_stats"), "error");
     }
 }
 
-// --- Load tenants with rent status ---
 async function loadTenants() {
     try {
-        // Fetch active tenants and current month rents in parallel
         const [tenants, rents] = await Promise.all([
             apiGet("/tenants/?active_only=true"),
             apiGet(`/rents/?month=${currentMonth}&year=${currentYear}`)
@@ -72,7 +72,6 @@ async function loadTenants() {
 
         if (!tenants) return;
 
-        // Build a map of tenant_id -> rent record for current month
         const rentMap = {};
         if (rents && rents.length) {
             rents.forEach(r => { rentMap[r.tenant_id] = r; });
@@ -91,7 +90,6 @@ async function loadTenants() {
 
         noMsg.classList.add("hidden");
 
-        // Merge tenant data with rent data
         const merged = tenants.map(t => {
             const rent = rentMap[t.id] || null;
             return {
@@ -106,70 +104,66 @@ async function loadTenants() {
             };
         });
 
-        // Render desktop table
-        tbody.innerHTML = merged.map(t => {
-            const badge = t.status
-                ? statusBadge(t.status)
-                : '<span class="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-500">No rent</span>';
+        tbody.innerHTML = merged.map(tn => {
+            const badge = tn.status
+                ? statusBadge(tn.status)
+                : '<span class="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-500">' + t("no_rent") + '</span>';
 
-            const remindBtn = t.status && t.status !== "paid"
-                ? `<button onclick="event.preventDefault(); sendReminder(${t.id})" class="text-indigo-600 hover:text-indigo-800 text-sm font-medium mr-3">📱 Remind</button>`
+            const remindBtn = tn.status && tn.status !== "paid"
+                ? `<button onclick="event.preventDefault(); sendReminder(${tn.id})" class="text-indigo-600 hover:text-indigo-800 text-sm font-medium mr-3">${t("remind_btn")}</button>`
                 : '';
 
             return `
-                <tr class="table-row border-b border-gray-50 cursor-pointer hover:bg-gray-50" onclick="window.location.href='tenant.html?id=${t.id}'">
-                    <td class="px-5 py-3 font-medium text-gray-800">${t.name}</td>
-                    <td class="px-5 py-3 text-gray-600">${t.room}</td>
-                    <td class="px-5 py-3 font-medium">${formatMoney(t.monthly_rent)}</td>
+                <tr class="table-row border-b border-gray-50 cursor-pointer hover:bg-gray-50" onclick="window.location.href='tenant.html?id=${tn.id}'">
+                    <td class="px-5 py-3 font-medium text-gray-800">${tn.name}</td>
+                    <td class="px-5 py-3 text-gray-600">${tn.room}</td>
+                    <td class="px-5 py-3 font-medium">${formatMoney(tn.monthly_rent)}</td>
                     <td class="px-5 py-3">${badge}</td>
-                    <td class="px-5 py-3">${formatMoney(t.amount_paid)}</td>
+                    <td class="px-5 py-3">${formatMoney(tn.amount_paid)}</td>
                     <td class="px-5 py-3">
                         ${remindBtn}
-                        <a href="tenant.html?id=${t.id}" class="text-indigo-600 hover:text-indigo-800 text-sm font-medium">View →</a>
+                        <a href="tenant.html?id=${tn.id}" class="text-indigo-600 hover:text-indigo-800 text-sm font-medium">${t("view_link")}</a>
                     </td>
                 </tr>
             `;
         }).join("");
 
-        // Render mobile cards
-        cards.innerHTML = merged.map(t => {
-            const badge = t.status
-                ? statusBadge(t.status)
-                : '<span class="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-500">No rent</span>';
+        cards.innerHTML = merged.map(tn => {
+            const badge = tn.status
+                ? statusBadge(tn.status)
+                : '<span class="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-500">' + t("no_rent") + '</span>';
 
             return `
-                <a href="tenant.html?id=${t.id}" class="mobile-card block">
+                <a href="tenant.html?id=${tn.id}" class="mobile-card block">
                     <div class="card-header">
-                        <span class="font-semibold text-gray-800">${t.name}</span>
+                        <span class="font-semibold text-gray-800">${tn.name}</span>
                         ${badge}
                     </div>
-                    <div class="card-row"><span class="label">Room</span><span class="value">${t.room}</span></div>
-                    <div class="card-row"><span class="label">Rent</span><span class="value">${formatMoney(t.monthly_rent)}</span></div>
-                    <div class="card-row"><span class="label">Paid</span><span class="value">${formatMoney(t.amount_paid)}</span></div>
+                    <div class="card-row"><span class="label">${t("th_room")}</span><span class="value">${tn.room}</span></div>
+                    <div class="card-row"><span class="label">${t("th_rent")}</span><span class="value">${formatMoney(tn.monthly_rent)}</span></div>
+                    <div class="card-row"><span class="label">${t("th_paid")}</span><span class="value">${formatMoney(tn.amount_paid)}</span></div>
                 </a>
             `;
         }).join("");
 
     } catch (err) {
-        showToast("Failed to load tenants", "error");
+        showToast(t("toast_failed_load_tenants"), "error");
     }
 }
 
-// --- Generate rents for current month ---
 async function generateRents() {
     try {
         const result = await apiPost("/rents/generate", { month: currentMonth, year: currentYear });
         if (result) {
-            showToast(result.message, "success");
+            showToast(t("toast_rent_generated"), "success");
             loadDashboard();
             loadTenants();
         }
     } catch (err) {
-        showToast(err.message, "error");
+        showToast(t("toast_rent_generate_failed"), "error");
     }
 }
 
-// --- Mark overdue rents ---
 async function markOverdue() {
     try {
         const result = await apiPost("/rents/mark-overdue");
@@ -183,21 +177,18 @@ async function markOverdue() {
     }
 }
 
-// --- Send reminder to a tenant (opens phone SMS app) ---
 async function sendReminder(tenantId) {
     try {
         var result = await apiPost("/notifications/send-reminder", { tenant_id: tenantId });
         var phone = result.phone;
         var message = encodeURIComponent(result.message);
-
         window.open("sms:" + phone + "?body=" + message, "_self");
-        showToast("Opening SMS app...", "success");
+        showToast(t("toast_reminder_opening"), "success");
     } catch (err) {
-        showToast("Failed to create reminder", "error");
+        showToast(t("toast_reminder_failed"), "error");
     }
 }
 
-// --- Add Tenant Modal ---
 function openAddModal() {
     document.getElementById("add-modal").classList.remove("hidden");
 }
@@ -222,18 +213,16 @@ async function addTenant(event) {
     try {
         const result = await apiPost("/tenants/", data);
         if (result) {
-            showToast("Tenant added successfully", "success");
+            showToast(t("toast_tenant_added"), "success");
             closeModal();
             loadDashboard();
             loadTenants();
         }
     } catch (err) {
-        // Show validation errors from API
-        showToast(err.message || "Failed to add tenant", "error");
+        showToast(err.message || t("toast_tenant_add_failed"), "error");
     }
 }
 
-// --- Sidebar toggle for mobile ---
 function toggleSidebar() {
     const sidebar = document.getElementById("sidebar");
     const overlay = document.getElementById("sidebar-overlay");
@@ -241,6 +230,5 @@ function toggleSidebar() {
     overlay.classList.toggle("hidden");
 }
 
-// --- Init ---
 loadDashboard();
 loadTenants();

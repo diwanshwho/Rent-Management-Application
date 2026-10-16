@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tenant Details - Rent Manager</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="css/style.css?v=2">
+    <link rel="stylesheet" href="css/style.css?v=4">
     <link rel="manifest" href="/manifest.json">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>body { font-family: 'Inter', sans-serif; }</style>
@@ -20,20 +20,24 @@
         <div class="p-5 border-b border-gray-100">
             <div class="flex items-center gap-3">
                 <div class="w-9 h-9 bg-indigo-600 rounded-lg flex items-center justify-center"><span class="text-lg">🏠</span></div>
-                <span class="text-lg font-bold text-gray-800">Rent Manager</span>
+                <span class="text-lg font-bold text-gray-800" data-i18n="app_name">Rent Manager</span>
             </div>
         </div>
         <nav class="p-4 space-y-1">
             <a href="dashboard.html" class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors">
-                <span class="text-lg">📊</span> Dashboard
+                <span class="text-lg">📊</span> <span data-i18n="nav_dashboard">Dashboard</span>
             </a>
             <a href="notifications.html" class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors">
-                <span class="text-lg">🔔</span> Notifications
+                <span class="text-lg">🔔</span> <span data-i18n="nav_notifications">Notifications</span>
             </a>
         </nav>
+        <!-- Language Switcher in sidebar -->
+        <div class="px-4 py-2">
+            <div id="lang-switcher-sidebar" class="flex justify-center"></div>
+        </div>
         <div class="absolute bottom-4 left-4 right-4">
             <button onclick="logout()" class="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-gray-500 hover:bg-red-50 hover:text-red-600 transition-colors">
-                <span class="text-lg">🚪</span> Logout
+                <span class="text-lg">🚪</span> <span data-i18n="logout">Logout</span>
             </button>
         </div>
     </aside>
@@ -48,10 +52,13 @@
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
                     </svg>
-                    <span class="text-sm font-medium">Back</span>
+                    <span class="text-sm font-medium" data-i18n="back">Back</span>
                 </a>
-                <h2 id="mobile-tenant-name" class="text-base font-semibold text-gray-800 truncate">Tenant Details</h2>
-                <button onclick="logout()" id="mobile-logout-btn" class="text-gray-500 text-sm font-medium hidden">Logout</button>
+                <h2 id="mobile-tenant-name" class="text-base font-semibold text-gray-800 truncate" data-i18n="tenant_details_title">Tenant Details</h2>
+                <div class="flex items-center gap-2">
+                    <div id="lang-switcher-mobile"></div>
+                    <button onclick="logout()" id="mobile-logout-btn" class="text-gray-500 text-sm font-medium hidden" data-i18n="logout">Logout</button>
+                </div>
             </div>
         </header>
 
@@ -64,7 +71,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
                         </svg>
                     </a>
-                    <h2 id="desktop-tenant-name" class="text-xl font-bold text-gray-800">Tenant Details</h2>
+                    <h2 id="desktop-tenant-name" class="text-xl font-bold text-gray-800" data-i18n="tenant_details_title">Tenant Details</h2>
                 </div>
             </div>
         </header>
@@ -75,18 +82,18 @@
             <!-- Section 1: Tenant Info -->
             <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 md:p-6">
                 <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-lg font-semibold text-gray-800">Tenant Information</h3>
-                    <button onclick="openEditModal()" id="btn-edit-tenant" class="text-sm font-medium text-indigo-600 hover:text-indigo-700 transition-colors">Edit</button>
+                    <h3 class="text-lg font-semibold text-gray-800" data-i18n="tenant_info_title">Tenant Information</h3>
+                    <button onclick="openEditModal()" id="btn-edit-tenant" class="text-sm font-medium text-indigo-600 hover:text-indigo-700 transition-colors" data-i18n="edit_btn">Edit</button>
                 </div>
                 <div id="tenant-info" class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-                    <div class="text-gray-400 text-center py-8 col-span-full">Loading tenant info...</div>
+                    <div class="text-gray-400 text-center py-8 col-span-full" data-i18n="loading_tenant_info">Loading tenant info...</div>
                 </div>
                 <div id="admin-actions" class="mt-5 pt-4 border-t border-gray-100 flex flex-wrap gap-2">
                     <button onclick="sendReminder()" class="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors">
-                        <span>📱</span> Send Reminder
+                        <span>📱</span> <span data-i18n="send_reminder_btn">Send Reminder</span>
                     </button>
                     <button onclick="deactivateTenant()" id="btn-deactivate" class="inline-flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 text-sm font-medium rounded-lg hover:bg-red-100 transition-colors">
-                        <span>🗑️</span> Deactivate Tenant
+                        <span>🗑️</span> <span data-i18n="deactivate_tenant_btn">Deactivate Tenant</span>
                     </button>
                 </div>
             </div>
@@ -103,39 +110,39 @@
                     </button>
                 </div>
                 <div id="rent-content">
-                    <div class="text-gray-400 text-center py-8">Loading rent info...</div>
+                    <div class="text-gray-400 text-center py-8" data-i18n="loading_rent_info">Loading rent info...</div>
                 </div>
             </div>
 
             <!-- Section 3: Electricity Bill -->
             <div id="electricity-section" class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 md:p-6">
-                <h3 class="text-lg font-semibold text-gray-800 mb-4">Electricity Bill</h3>
+                <h3 class="text-lg font-semibold text-gray-800 mb-4" data-i18n="electricity_bill_title">Electricity Bill</h3>
                 <div id="electricity-content">
-                    <div class="text-gray-400 text-center py-8">Loading electricity info...</div>
+                    <div class="text-gray-400 text-center py-8" data-i18n="loading_electricity_info">Loading electricity info...</div>
                 </div>
             </div>
 
             <!-- Section 3b: Electricity History -->
             <div id="electricity-history" class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 md:p-6">
-                <h3 class="text-lg font-semibold text-gray-800 mb-4">Electricity History</h3>
+                <h3 class="text-lg font-semibold text-gray-800 mb-4" data-i18n="electricity_history_title">Electricity History</h3>
                 <div id="electricity-history-content">
-                    <div class="text-gray-400 text-center py-8">Loading electricity history...</div>
+                    <div class="text-gray-400 text-center py-8" data-i18n="loading_electricity_history">Loading electricity history...</div>
                 </div>
             </div>
 
             <!-- Section 4: Payment History -->
             <div id="payment-history" class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 md:p-6">
-                <h3 class="text-lg font-semibold text-gray-800 mb-4">Transaction History</h3>
+                <h3 class="text-lg font-semibold text-gray-800 mb-4" data-i18n="transaction_history_title">Transaction History</h3>
                 <div id="payment-history-content">
-                    <div class="text-gray-400 text-center py-8">Loading payment history...</div>
+                    <div class="text-gray-400 text-center py-8" data-i18n="loading_payment_history">Loading payment history...</div>
                 </div>
             </div>
 
             <!-- Section 5: Notification History -->
             <div id="notification-history" class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 md:p-6">
-                <h3 class="text-lg font-semibold text-gray-800 mb-4">Notification History</h3>
+                <h3 class="text-lg font-semibold text-gray-800 mb-4" data-i18n="notification_history_title">Notification History</h3>
                 <div id="notification-history-content">
-                    <div class="text-gray-400 text-center py-8">Loading notification history...</div>
+                    <div class="text-gray-400 text-center py-8" data-i18n="loading_notification_history">Loading notification history...</div>
                 </div>
             </div>
 
@@ -145,10 +152,10 @@
     <!-- Bottom Nav (mobile) -->
     <nav class="bottom-nav md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-40 flex justify-around py-2 px-4">
         <a href="dashboard.html" class="bottom-nav-link flex flex-col items-center gap-1 text-xs font-medium text-gray-400">
-            <span class="text-lg">📊</span><span>Home</span>
+            <span class="text-lg">📊</span><span data-i18n="nav_dashboard">Home</span>
         </a>
         <a href="notifications.html" class="bottom-nav-link flex flex-col items-center gap-1 text-xs font-medium text-gray-400">
-            <span class="text-lg">🔔</span><span>Notifications</span>
+            <span class="text-lg">🔔</span><span data-i18n="nav_notifications">Notifications</span>
         </a>
     </nav>
 
@@ -156,7 +163,7 @@
     <div id="edit-modal" class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center p-4">
         <div class="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
             <div class="flex items-center justify-between p-5 border-b border-gray-100">
-                <h3 class="text-lg font-semibold text-gray-800">Edit Tenant</h3>
+                <h3 class="text-lg font-semibold text-gray-800" data-i18n="modal_edit_tenant_title">Edit Tenant</h3>
                 <button onclick="closeEditModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
@@ -165,28 +172,28 @@
             </div>
             <form id="edit-form" onsubmit="saveEdit(event)" class="p-5 flex flex-col gap-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1" data-i18n="label_name">Name</label>
                     <input type="text" id="edit-name" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-shadow">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-                    <input type="tel" id="edit-phone" required pattern="(\+91)?[6-9][0-9]{9}" maxlength="13" placeholder="10 digit Indian mobile number" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-shadow">
+                    <label class="block text-sm font-medium text-gray-700 mb-1" data-i18n="label_phone">Phone</label>
+                    <input type="tel" id="edit-phone" required pattern="(\+91)?[6-9][0-9]{9}" maxlength="13" data-i18n-placeholder="placeholder_mobile" placeholder="10 digit Indian mobile number" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-shadow">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Room</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1" data-i18n="label_room_number">Room</label>
                     <input type="text" id="edit-room" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-shadow">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Monthly Rent (₹)</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1" data-i18n="label_monthly_rent">Monthly Rent (₹)</label>
                     <input type="number" id="edit-rent" required min="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-shadow">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Rent Due Day</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1" data-i18n="label_due_day_short">Rent Due Day</label>
                     <input type="number" id="edit-due-day" required min="1" max="28" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-shadow">
                 </div>
                 <div class="flex gap-3 pt-2">
-                    <button type="button" onclick="closeEditModal()" class="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors">Cancel</button>
-                    <button type="submit" class="flex-1 px-4 py-2.5 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors">Save Changes</button>
+                    <button type="button" onclick="closeEditModal()" class="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors" data-i18n="btn_cancel">Cancel</button>
+                    <button type="submit" class="flex-1 px-4 py-2.5 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors" data-i18n="btn_save_changes">Save Changes</button>
                 </div>
             </form>
         </div>
@@ -196,7 +203,7 @@
     <div id="payment-modal" class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center p-4">
         <div class="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
             <div class="flex items-center justify-between p-5 border-b border-gray-100">
-                <h3 class="text-lg font-semibold text-gray-800">Record Payment</h3>
+                <h3 class="text-lg font-semibold text-gray-800" data-i18n="modal_record_payment_title">Record Payment</h3>
                 <button onclick="closePaymentModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
@@ -205,29 +212,29 @@
             </div>
             <form id="payment-form" onsubmit="savePayment(event)" class="p-5 flex flex-col gap-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Amount (₹)</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1" data-i18n="label_amount">Amount (₹)</label>
                     <input type="number" id="pay-amount" required min="1" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-shadow">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1" data-i18n="label_date">Date</label>
                     <input type="date" id="pay-date" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-shadow">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Method</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1" data-i18n="label_method">Method</label>
                     <select id="pay-method" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-shadow bg-white">
-                        <option value="cash">Cash</option>
-                        <option value="upi">UPI</option>
-                        <option value="bank_transfer">Bank Transfer</option>
-                        <option value="other">Other</option>
+                        <option value="cash" data-i18n="method_cash">Cash</option>
+                        <option value="upi" data-i18n="method_upi">UPI</option>
+                        <option value="bank_transfer" data-i18n="method_bank_transfer">Bank Transfer</option>
+                        <option value="other" data-i18n="method_other">Other</option>
                     </select>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Note <span class="text-gray-400 font-normal">(optional)</span></label>
-                    <input type="text" id="pay-note" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-shadow" placeholder="Any remarks...">
+                    <label class="block text-sm font-medium text-gray-700 mb-1"><span data-i18n="label_note">Note</span> <span class="text-gray-400 font-normal">(<span data-i18n="label_note_optional">optional</span>)</span></label>
+                    <input type="text" id="pay-note" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-shadow" data-i18n-placeholder="placeholder_remarks" placeholder="Any remarks...">
                 </div>
                 <div class="flex gap-3 pt-2">
-                    <button type="button" onclick="closePaymentModal()" class="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors">Cancel</button>
-                    <button type="submit" class="flex-1 px-4 py-2.5 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-colors">Record Payment</button>
+                    <button type="button" onclick="closePaymentModal()" class="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors" data-i18n="btn_cancel">Cancel</button>
+                    <button type="submit" class="flex-1 px-4 py-2.5 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-colors" data-i18n="record_payment_btn">Record Payment</button>
                 </div>
             </form>
         </div>
@@ -237,7 +244,7 @@
     <div id="electricity-modal" class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center p-4">
         <div class="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
             <div class="flex items-center justify-between p-5 border-b border-gray-100">
-                <h3 class="text-lg font-semibold text-gray-800">Add Electricity Reading</h3>
+                <h3 class="text-lg font-semibold text-gray-800" data-i18n="modal_add_electricity_title">Add Electricity Reading</h3>
                 <button onclick="closeElectricityModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
@@ -246,30 +253,31 @@
             </div>
             <form id="electricity-form" onsubmit="saveElectricity(event)" class="p-5 flex flex-col gap-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Previous Reading</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1" data-i18n="label_previous_reading">Previous Reading</label>
                     <input type="number" id="elec-prev" required min="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition-shadow" oninput="updateEstimate()">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Current Reading</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1" data-i18n="label_current_reading">Current Reading</label>
                     <input type="number" id="elec-curr" required min="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition-shadow" oninput="updateEstimate()">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Rate per Unit (₹)</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1" data-i18n="label_rate_per_unit">Rate per Unit (₹)</label>
                     <input type="number" id="elec-rate" required min="0" step="0.01" value="8" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition-shadow" oninput="updateEstimate()">
                 </div>
                 <div id="elec-estimate" class="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800 hidden">
-                    <span class="font-medium">Estimated Total:</span> <span id="elec-estimate-value">₹0</span>
-                    <span class="text-amber-600 block text-xs mt-1"><span id="elec-estimate-units">0</span> units</span>
+                    <span class="font-medium" data-i18n="estimated_total">Estimated Total:</span> <span id="elec-estimate-value">₹0</span>
+                    <span class="text-amber-600 block text-xs mt-1"><span id="elec-estimate-units">0</span> <span data-i18n="units_label">units</span></span>
                 </div>
                 <div class="flex gap-3 pt-2">
-                    <button type="button" onclick="closeElectricityModal()" class="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors">Cancel</button>
-                    <button type="submit" class="flex-1 px-4 py-2.5 bg-amber-500 text-white text-sm font-medium rounded-lg hover:bg-amber-600 transition-colors">Save Reading</button>
+                    <button type="button" onclick="closeElectricityModal()" class="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors" data-i18n="btn_cancel">Cancel</button>
+                    <button type="submit" class="flex-1 px-4 py-2.5 bg-amber-500 text-white text-sm font-medium rounded-lg hover:bg-amber-600 transition-colors" data-i18n="save_reading_btn">Save Reading</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <script src="js/api.js?v=2"></script>
-    <script src="js/tenant.js?v=2"></script>
+    <script src="js/api.js?v=4"></script>
+    <script src="js/i18n.js?v=4"></script>
+    <script src="js/tenant.js?v=4"></script>
 </body>
 </html>

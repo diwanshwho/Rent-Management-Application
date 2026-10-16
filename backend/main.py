@@ -90,10 +90,16 @@ if os.path.isdir(FRONTEND_DIR):
     # Serve static assets (css, js, images)
     app.mount("/css", StaticFiles(directory=os.path.join(FRONTEND_DIR, "css")), name="css")
     app.mount("/js", StaticFiles(directory=os.path.join(FRONTEND_DIR, "js")), name="js")
+    app.mount("/icons", StaticFiles(directory=os.path.join(FRONTEND_DIR, "icons")), name="icons")
 
     @app.get("/manifest.json")
     def serve_manifest():
         return FileResponse(os.path.join(FRONTEND_DIR, "manifest.json"), media_type="application/json")
+
+    @app.get("/sw.js")
+    def serve_service_worker():
+        headers = {"Cache-Control": "no-cache, no-store, must-revalidate", "Service-Worker-Allowed": "/"}
+        return FileResponse(os.path.join(FRONTEND_DIR, "sw.js"), media_type="application/javascript", headers=headers)
 
     @app.get("/{page}.html")
     def serve_page(page: str):

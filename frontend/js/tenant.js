@@ -12,36 +12,30 @@ if (!tenantId) {
 
 const isTenantRole = getRole() === "tenant";
 
-// Tenant users: restrict access to only their own page
 if (isTenantRole && getTenantAccessId() !== tenantId) {
     window.location.href = "tenant.html?id=" + getTenantAccessId();
 }
 
-// Hide admin-only UI elements for tenants
 if (isTenantRole) {
-    // Hide entire admin actions bar (Send Reminder + Deactivate)
     var adminActions = document.getElementById("admin-actions");
     if (adminActions) adminActions.style.display = "none";
-    // Hide Edit button
     var editBtn = document.getElementById("btn-edit-tenant");
     if (editBtn) editBtn.style.display = "none";
-    // Hide notification history (tenants don't send reminders)
     var notifHistory = document.getElementById("notification-history");
     if (notifHistory) notifHistory.style.display = "none";
-    // Hide sidebar nav links to dashboard/notifications
     document.querySelectorAll('nav a[href="dashboard.html"], nav a[href="notifications.html"]').forEach(function(el) { el.style.display = "none"; });
-    // Mobile header: hide back link, show logout on right
     var mobileBack = document.getElementById("mobile-back-link");
     if (mobileBack) mobileBack.style.display = "none";
     var mobileLogout = document.getElementById("mobile-logout-btn");
     if (mobileLogout) mobileLogout.classList.remove("hidden");
-    // Desktop header: hide back arrow to dashboard
     var desktopBack = document.getElementById("desktop-back-link");
     if (desktopBack) desktopBack.style.display = "none";
-    // Hide empty bottom nav
     var bottomNav = document.querySelector('.bottom-nav');
     if (bottomNav) bottomNav.style.display = "none";
 }
+
+renderLangSwitcher(document.getElementById("lang-switcher-sidebar"));
+renderLangSwitcher(document.getElementById("lang-switcher-mobile"));
 
 const now = new Date();
 let currentMonth = now.getMonth() + 1;
@@ -49,354 +43,336 @@ let currentYear = now.getFullYear();
 let tenant = null;
 let currentRent = null;
 
-const monthNames = [
-    "", "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December"
-];
-
-// ─── Load Tenant Info ───────────────────────────────────────────────
 async function loadTenant() {
     try {
-        const data = await apiGet(`/tenants/${tenantId}`);
+        const data = await apiGet("/tenants/" + tenantId);
         tenant = data;
 
-        document.title = `${tenant.name} - Rent Manager`;
-        const mobileName = document.getElementById("mobile-tenant-name");
-        const desktopName = document.getElementById("desktop-tenant-name");
+        document.title = tenant.name + " - " + t("app_name");
+        var mobileName = document.getElementById("mobile-tenant-name");
+        var desktopName = document.getElementById("desktop-tenant-name");
         if (mobileName) mobileName.textContent = tenant.name;
         if (desktopName) desktopName.textContent = tenant.name;
 
-        const joinDate = tenant.join_date
-            ? new Date(tenant.join_date).toLocaleDateString("en-IN", { year: "numeric", month: "short", day: "numeric" })
+        var locale = getLang() === "hi" ? "hi-IN" : "en-IN";
+        var joinDate = tenant.join_date
+            ? new Date(tenant.join_date).toLocaleDateString(locale, { year: "numeric", month: "short", day: "numeric" })
             : "-";
 
-        const isActive = tenant.is_active !== false;
-        const badge = isActive
-            ? '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">Active</span>'
-            : '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">Inactive</span>';
+        var isActive = tenant.is_active !== false;
+        var badge = isActive
+            ? '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">' + t("active") + '</span>'
+            : '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">' + t("inactive") + '</span>';
 
-        document.getElementById("tenant-info").innerHTML = `
-            <div>
-                <span class="text-gray-500 text-xs uppercase tracking-wide">Name</span>
-                <p class="font-medium text-gray-800 mt-0.5">${tenant.name}</p>
-            </div>
-            <div>
-                <span class="text-gray-500 text-xs uppercase tracking-wide">Phone</span>
-                <p class="font-medium text-gray-800 mt-0.5">${tenant.phone || "-"}</p>
-            </div>
-            <div>
-                <span class="text-gray-500 text-xs uppercase tracking-wide">Room</span>
-                <p class="font-medium text-gray-800 mt-0.5">${tenant.room_number || "-"}</p>
-            </div>
-            <div>
-                <span class="text-gray-500 text-xs uppercase tracking-wide">Monthly Rent</span>
-                <p class="font-medium text-gray-800 mt-0.5">${formatMoney(tenant.monthly_rent)}</p>
-            </div>
-            <div>
-                <span class="text-gray-500 text-xs uppercase tracking-wide">Due Day</span>
-                <p class="font-medium text-gray-800 mt-0.5">${tenant.rent_due_day || "-"}<sup>th</sup> of every month</p>
-            </div>
-            <div>
-                <span class="text-gray-500 text-xs uppercase tracking-wide">Join Date</span>
-                <p class="font-medium text-gray-800 mt-0.5">${joinDate}</p>
-            </div>
-            <div class="sm:col-span-2">
-                <span class="text-gray-500 text-xs uppercase tracking-wide">Status</span>
-                <p class="mt-1">${badge}</p>
-            </div>
-        `;
+        document.getElementById("tenant-info").innerHTML =
+            '<div>' +
+                '<span class="text-gray-500 text-xs uppercase tracking-wide">' + t("label_name") + '</span>' +
+                '<p class="font-medium text-gray-800 mt-0.5">' + tenant.name + '</p>' +
+            '</div>' +
+            '<div>' +
+                '<span class="text-gray-500 text-xs uppercase tracking-wide">' + t("label_phone") + '</span>' +
+                '<p class="font-medium text-gray-800 mt-0.5">' + (tenant.phone || "-") + '</p>' +
+            '</div>' +
+            '<div>' +
+                '<span class="text-gray-500 text-xs uppercase tracking-wide">' + t("label_room_number") + '</span>' +
+                '<p class="font-medium text-gray-800 mt-0.5">' + (tenant.room_number || "-") + '</p>' +
+            '</div>' +
+            '<div>' +
+                '<span class="text-gray-500 text-xs uppercase tracking-wide">' + t("label_monthly_rent") + '</span>' +
+                '<p class="font-medium text-gray-800 mt-0.5">' + formatMoney(tenant.monthly_rent) + '</p>' +
+            '</div>' +
+            '<div>' +
+                '<span class="text-gray-500 text-xs uppercase tracking-wide">' + t("label_due_day_short") + '</span>' +
+                '<p class="font-medium text-gray-800 mt-0.5">' + (tenant.rent_due_day || "-") + '<sup>th</sup> ' + t("of_every_month") + '</p>' +
+            '</div>' +
+            '<div>' +
+                '<span class="text-gray-500 text-xs uppercase tracking-wide">' + t("label_join_date_short") + '</span>' +
+                '<p class="font-medium text-gray-800 mt-0.5">' + joinDate + '</p>' +
+            '</div>' +
+            '<div class="sm:col-span-2">' +
+                '<span class="text-gray-500 text-xs uppercase tracking-wide">' + t("label_status") + '</span>' +
+                '<p class="mt-1">' + badge + '</p>' +
+            '</div>';
 
-        // Hide deactivate button if already inactive or if tenant role
         var deactivateBtn = document.getElementById("btn-deactivate");
         if (deactivateBtn) {
             deactivateBtn.style.display = (isActive && !isTenantRole) ? "" : "none";
         }
     } catch (err) {
         document.getElementById("tenant-info").innerHTML =
-            '<div class="text-red-500 text-center py-4 col-span-full">Failed to load tenant info.</div>';
+            '<div class="text-red-500 text-center py-4 col-span-full">' + t("failed_load_tenant_info") + '</div>';
     }
 }
 
-// ─── Load This Month's Rent ─────────────────────────────────────────
 async function loadRent() {
-    const container = document.getElementById("rent-content");
+    var container = document.getElementById("rent-content");
+    var mn = getMonthNames();
     try {
-        const rents = await apiGet(`/rents/?month=${currentMonth}&year=${currentYear}`);
+        var rents = await apiGet("/rents/?month=" + currentMonth + "&year=" + currentYear);
         currentRent = Array.isArray(rents)
-            ? rents.find(r => String(r.tenant_id) === String(tenantId))
+            ? rents.find(function(r) { return String(r.tenant_id) === String(tenantId); })
             : null;
 
         if (!currentRent) {
-            container.innerHTML = isTenantRole
-                ? '<div class="text-center py-6"><p class="text-gray-500">No rent generated for ' + monthNames[currentMonth] + ' ' + currentYear + '</p></div>'
-                : `
-                <div class="text-center py-6">
-                    <p class="text-gray-500 mb-4">No rent generated for ${monthNames[currentMonth]} ${currentYear}</p>
-                    <button onclick="generateRentForTenant()" class="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors">
-                        Generate Rent
-                    </button>
-                </div>
-            `;
+            if (isTenantRole) {
+                container.innerHTML = '<div class="text-center py-6"><p class="text-gray-500">' + t("no_rent_generated") + ' ' + mn[currentMonth] + ' ' + currentYear + '</p></div>';
+            } else {
+                container.innerHTML =
+                    '<div class="text-center py-6">' +
+                        '<p class="text-gray-500 mb-4">' + t("no_rent_generated") + ' ' + mn[currentMonth] + ' ' + currentYear + '</p>' +
+                        '<button onclick="generateRentForTenant()" class="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors">' +
+                            t("generate_rent_btn") +
+                        '</button>' +
+                    '</div>';
+            }
             return;
         }
 
-        const remaining = (currentRent.amount_due || 0) - (currentRent.amount_paid || 0);
-        const status = currentRent.status || "pending";
-        const elecAmt = currentRent.electricity_amount || 0;
-        const baseRent = currentRent.amount_due - elecAmt;
+        var remaining = (currentRent.amount_due || 0) - (currentRent.amount_paid || 0);
+        var status = currentRent.status || "pending";
+        var elecAmt = currentRent.electricity_amount || 0;
+        var baseRent = currentRent.amount_due - elecAmt;
 
-        // Show breakdown if electricity is included
-        const breakdownHtml = elecAmt > 0 ? `
-            <div class="bg-gray-50 rounded-lg p-3">
-                <span class="text-gray-500 text-xs uppercase tracking-wide">Base Rent</span>
-                <p class="font-semibold text-gray-800 mt-1">${formatMoney(baseRent)}</p>
-            </div>
-            <div class="bg-gray-50 rounded-lg p-3">
-                <span class="text-gray-500 text-xs uppercase tracking-wide">Electricity</span>
-                <p class="font-semibold text-amber-600 mt-1">${formatMoney(elecAmt)}</p>
-            </div>
-            <div class="bg-gray-50 rounded-lg p-3">
-                <span class="text-gray-500 text-xs uppercase tracking-wide">Total Due</span>
-                <p class="font-semibold text-gray-800 mt-1">${formatMoney(currentRent.amount_due)}</p>
-            </div>
-        ` : `
-            <div class="bg-gray-50 rounded-lg p-3">
-                <span class="text-gray-500 text-xs uppercase tracking-wide">Due</span>
-                <p class="font-semibold text-gray-800 mt-1">${formatMoney(currentRent.amount_due)}</p>
-            </div>
-        `;
+        var breakdownHtml = elecAmt > 0 ?
+            '<div class="bg-gray-50 rounded-lg p-3">' +
+                '<span class="text-gray-500 text-xs uppercase tracking-wide">' + t("label_base_rent") + '</span>' +
+                '<p class="font-semibold text-gray-800 mt-1">' + formatMoney(baseRent) + '</p>' +
+            '</div>' +
+            '<div class="bg-gray-50 rounded-lg p-3">' +
+                '<span class="text-gray-500 text-xs uppercase tracking-wide">' + t("label_electricity") + '</span>' +
+                '<p class="font-semibold text-amber-600 mt-1">' + formatMoney(elecAmt) + '</p>' +
+            '</div>' +
+            '<div class="bg-gray-50 rounded-lg p-3">' +
+                '<span class="text-gray-500 text-xs uppercase tracking-wide">' + t("label_total_due") + '</span>' +
+                '<p class="font-semibold text-gray-800 mt-1">' + formatMoney(currentRent.amount_due) + '</p>' +
+            '</div>'
+            :
+            '<div class="bg-gray-50 rounded-lg p-3">' +
+                '<span class="text-gray-500 text-xs uppercase tracking-wide">' + t("label_due") + '</span>' +
+                '<p class="font-semibold text-gray-800 mt-1">' + formatMoney(currentRent.amount_due) + '</p>' +
+            '</div>';
 
-        container.innerHTML = `
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
-                ${breakdownHtml}
-                <div class="bg-gray-50 rounded-lg p-3">
-                    <span class="text-gray-500 text-xs uppercase tracking-wide">Paid</span>
-                    <p class="font-semibold text-emerald-600 mt-1">${formatMoney(currentRent.amount_paid)}</p>
-                </div>
-                <div class="bg-gray-50 rounded-lg p-3">
-                    <span class="text-gray-500 text-xs uppercase tracking-wide">Remaining</span>
-                    <p class="font-semibold ${remaining > 0 ? 'text-red-600' : 'text-gray-800'} mt-1">${formatMoney(remaining)}</p>
-                </div>
-                <div class="bg-gray-50 rounded-lg p-3">
-                    <span class="text-gray-500 text-xs uppercase tracking-wide">Status</span>
-                    <p class="mt-1">${statusBadge(status)}</p>
-                </div>
-            </div>
-            ${!isTenantRole && remaining > 0 ? `
-            <button onclick="openPaymentModal()" class="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-colors">
-                Record Payment
-            </button>
-            ` : ''}
-        `;
+        var payBtn = (!isTenantRole && remaining > 0)
+            ? '<button onclick="openPaymentModal()" class="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-colors">' + t("record_payment_btn") + '</button>'
+            : '';
+
+        container.innerHTML =
+            '<div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">' +
+                breakdownHtml +
+                '<div class="bg-gray-50 rounded-lg p-3">' +
+                    '<span class="text-gray-500 text-xs uppercase tracking-wide">' + t("label_paid") + '</span>' +
+                    '<p class="font-semibold text-emerald-600 mt-1">' + formatMoney(currentRent.amount_paid) + '</p>' +
+                '</div>' +
+                '<div class="bg-gray-50 rounded-lg p-3">' +
+                    '<span class="text-gray-500 text-xs uppercase tracking-wide">' + t("label_remaining") + '</span>' +
+                    '<p class="font-semibold ' + (remaining > 0 ? 'text-red-600' : 'text-gray-800') + ' mt-1">' + formatMoney(remaining) + '</p>' +
+                '</div>' +
+                '<div class="bg-gray-50 rounded-lg p-3">' +
+                    '<span class="text-gray-500 text-xs uppercase tracking-wide">' + t("label_status") + '</span>' +
+                    '<p class="mt-1">' + statusBadge(status) + '</p>' +
+                '</div>' +
+            '</div>' + payBtn;
     } catch (err) {
-        container.innerHTML = '<div class="text-red-500 text-center py-4">Failed to load rent info.</div>';
+        container.innerHTML = '<div class="text-red-500 text-center py-4">' + t("failed_load_rent_info") + '</div>';
     }
 }
 
-// ─── Generate Rent ──────────────────────────────────────────────────
 async function generateRentForTenant() {
     try {
         await apiPost("/rents/generate", { month: currentMonth, year: currentYear });
-        showToast("Rent generated successfully", "success");
+        showToast(t("toast_rent_generated"), "success");
         await loadRent();
     } catch (err) {
-        showToast("Failed to generate rent", "error");
+        showToast(t("toast_rent_generate_failed"), "error");
     }
 }
 
-// ─── Load Electricity ───────────────────────────────────────────────
 async function loadElectricity() {
-    const container = document.getElementById("electricity-content");
+    var container = document.getElementById("electricity-content");
+    var mn = getMonthNames();
     if (!tenant) {
         container.innerHTML = '<div class="text-gray-400 text-center py-4">Loading...</div>';
         return;
     }
     try {
-        const readings = await apiGet(`/electricity/?tenant_id=${tenantId}&month=${currentMonth}&year=${currentYear}`);
-        const reading = Array.isArray(readings) && readings.length > 0 ? readings[0] : null;
+        var readings = await apiGet("/electricity/?tenant_id=" + tenantId + "&month=" + currentMonth + "&year=" + currentYear);
+        var reading = Array.isArray(readings) && readings.length > 0 ? readings[0] : null;
 
         if (!reading) {
-            container.innerHTML = isTenantRole
-                ? '<div class="text-center py-6"><p class="text-gray-500">No reading for ' + monthNames[currentMonth] + ' ' + currentYear + '</p></div>'
-                : `
-                <div class="text-center py-6">
-                    <p class="text-gray-500 mb-4">No reading for ${monthNames[currentMonth]} ${currentYear}</p>
-                    <button onclick="openElectricityModal()" class="inline-flex items-center gap-2 px-4 py-2 bg-amber-500 text-white text-sm font-medium rounded-lg hover:bg-amber-600 transition-colors">
-                        Add Reading
-                    </button>
-                </div>
-            `;
+            if (isTenantRole) {
+                container.innerHTML = '<div class="text-center py-6"><p class="text-gray-500">' + t("no_reading_for") + ' ' + mn[currentMonth] + ' ' + currentYear + '</p></div>';
+            } else {
+                container.innerHTML =
+                    '<div class="text-center py-6">' +
+                        '<p class="text-gray-500 mb-4">' + t("no_reading_for") + ' ' + mn[currentMonth] + ' ' + currentYear + '</p>' +
+                        '<button onclick="openElectricityModal()" class="inline-flex items-center gap-2 px-4 py-2 bg-amber-500 text-white text-sm font-medium rounded-lg hover:bg-amber-600 transition-colors">' +
+                            t("add_reading_btn") +
+                        '</button>' +
+                    '</div>';
+            }
             return;
         }
 
-        const units = (reading.curr_reading || 0) - (reading.prev_reading || 0);
-        const total = reading.total_amount || (units * (reading.rate_per_unit || 0));
+        var units = (reading.curr_reading || 0) - (reading.prev_reading || 0);
+        var total = reading.total_amount || (units * (reading.rate_per_unit || 0));
 
-        container.innerHTML = `
-            <div class="grid grid-cols-2 sm:grid-cols-5 gap-4">
-                <div class="bg-gray-50 rounded-lg p-3">
-                    <span class="text-gray-500 text-xs uppercase tracking-wide">Previous</span>
-                    <p class="font-semibold text-gray-800 mt-1">${reading.prev_reading}</p>
-                </div>
-                <div class="bg-gray-50 rounded-lg p-3">
-                    <span class="text-gray-500 text-xs uppercase tracking-wide">Current</span>
-                    <p class="font-semibold text-gray-800 mt-1">${reading.curr_reading}</p>
-                </div>
-                <div class="bg-gray-50 rounded-lg p-3">
-                    <span class="text-gray-500 text-xs uppercase tracking-wide">Units</span>
-                    <p class="font-semibold text-gray-800 mt-1">${units}</p>
-                </div>
-                <div class="bg-gray-50 rounded-lg p-3">
-                    <span class="text-gray-500 text-xs uppercase tracking-wide">Rate</span>
-                    <p class="font-semibold text-gray-800 mt-1">${formatMoney(reading.rate_per_unit)}/unit</p>
-                </div>
-                <div class="bg-gray-50 rounded-lg p-3">
-                    <span class="text-gray-500 text-xs uppercase tracking-wide">Total</span>
-                    <p class="font-semibold text-amber-600 mt-1">${formatMoney(total)}</p>
-                </div>
-            </div>
-            <div class="mt-3 flex gap-2">
-                ${!isTenantRole ? `<button onclick="deleteElectricity(${reading.id})" class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors">
-                    🗑️ Delete Reading
-                </button>` : ''}
-            </div>
-        `;
+        var deleteBtn = !isTenantRole
+            ? '<button onclick="deleteElectricity(' + reading.id + ')" class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors">' + t("delete_reading_btn") + '</button>'
+            : '';
+
+        container.innerHTML =
+            '<div class="grid grid-cols-2 sm:grid-cols-5 gap-4">' +
+                '<div class="bg-gray-50 rounded-lg p-3">' +
+                    '<span class="text-gray-500 text-xs uppercase tracking-wide">' + t("label_previous") + '</span>' +
+                    '<p class="font-semibold text-gray-800 mt-1">' + reading.prev_reading + '</p>' +
+                '</div>' +
+                '<div class="bg-gray-50 rounded-lg p-3">' +
+                    '<span class="text-gray-500 text-xs uppercase tracking-wide">' + t("label_current") + '</span>' +
+                    '<p class="font-semibold text-gray-800 mt-1">' + reading.curr_reading + '</p>' +
+                '</div>' +
+                '<div class="bg-gray-50 rounded-lg p-3">' +
+                    '<span class="text-gray-500 text-xs uppercase tracking-wide">' + t("label_units") + '</span>' +
+                    '<p class="font-semibold text-gray-800 mt-1">' + units + '</p>' +
+                '</div>' +
+                '<div class="bg-gray-50 rounded-lg p-3">' +
+                    '<span class="text-gray-500 text-xs uppercase tracking-wide">' + t("label_rate") + '</span>' +
+                    '<p class="font-semibold text-gray-800 mt-1">' + formatMoney(reading.rate_per_unit) + '/unit</p>' +
+                '</div>' +
+                '<div class="bg-gray-50 rounded-lg p-3">' +
+                    '<span class="text-gray-500 text-xs uppercase tracking-wide">' + t("label_total") + '</span>' +
+                    '<p class="font-semibold text-amber-600 mt-1">' + formatMoney(total) + '</p>' +
+                '</div>' +
+            '</div>' +
+            '<div class="mt-3 flex gap-2">' + deleteBtn + '</div>';
     } catch (err) {
-        container.innerHTML = '<div class="text-red-500 text-center py-4">Failed to load electricity info.</div>';
+        container.innerHTML = '<div class="text-red-500 text-center py-4">' + t("failed_load_electricity_info") + '</div>';
     }
 }
 
-// ─── Load Transaction History (Payments + Electricity) ─────────────
 async function loadPaymentHistory() {
-    const container = document.getElementById("payment-history-content");
+    var container = document.getElementById("payment-history-content");
+    var mn = getMonthNames();
     try {
-        const [payments, electricityBills] = await Promise.all([
-            apiGet(`/rents/payments?tenant_id=${tenantId}`),
-            apiGet(`/electricity/?tenant_id=${tenantId}`)
+        var results = await Promise.all([
+            apiGet("/rents/payments?tenant_id=" + tenantId),
+            apiGet("/electricity/?tenant_id=" + tenantId)
         ]);
+        var payments = results[0];
+        var electricityBills = results[1];
 
-        const timeline = [];
+        var timeline = [];
 
         if (Array.isArray(payments)) {
-            payments.forEach(p => {
-                timeline.push({
-                    type: 'payment',
-                    sortDate: new Date(p.date || p.created_at),
-                    data: p
-                });
+            payments.forEach(function(p) {
+                timeline.push({ type: 'payment', sortDate: new Date(p.date || p.created_at), data: p });
             });
         }
 
         if (Array.isArray(electricityBills)) {
-            electricityBills.forEach(b => {
-                timeline.push({
-                    type: 'electricity',
-                    sortDate: new Date(b.year, b.month - 1, 1),
-                    data: b
-                });
+            electricityBills.forEach(function(b) {
+                timeline.push({ type: 'electricity', sortDate: new Date(b.year, b.month - 1, 1), data: b });
             });
         }
 
         if (timeline.length === 0) {
-            container.innerHTML = '<div class="text-gray-400 text-center py-6">No transactions yet.</div>';
+            container.innerHTML = '<div class="text-gray-400 text-center py-6">' + t("no_transactions_yet") + '</div>';
             return;
         }
 
-        timeline.sort((a, b) => b.sortDate - a.sortDate);
+        timeline.sort(function(a, b) { return b.sortDate - a.sortDate; });
 
-        container.innerHTML = `<div class="flex flex-col gap-3">${timeline.map(item => {
+        var locale = getLang() === "hi" ? "hi-IN" : "en-IN";
+
+        container.innerHTML = '<div class="flex flex-col gap-3">' + timeline.map(function(item) {
             if (item.type === 'payment') {
-                const p = item.data;
-                const date = p.date || p.created_at;
-                const formattedDate = date ? new Date(date).toLocaleDateString("en-IN", { year: "numeric", month: "short", day: "numeric" }) : "-";
-                const method = p.method || "-";
-                const note = p.note || "";
+                var p = item.data;
+                var date = p.date || p.created_at;
+                var formattedDate = date ? new Date(date).toLocaleDateString(locale, { year: "numeric", month: "short", day: "numeric" }) : "-";
+                var method = p.method || "-";
+                var note = p.note || "";
 
-                return `
-                    <div class="border border-gray-100 rounded-lg p-4 hover:bg-gray-50 transition-colors">
-                        <div class="flex items-center justify-between mb-2">
-                            <div class="flex items-center gap-2">
-                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">Payment</span>
-                                <span class="font-semibold text-emerald-600">${formatMoney(p.amount)}</span>
-                            </div>
-                            <div class="flex items-center gap-2">
-                                <span class="text-gray-400 text-sm">${formattedDate}</span>
-                                ${!isTenantRole ? `<button onclick="event.stopPropagation(); deletePayment(${p.id})" class="text-red-400 hover:text-red-600 text-sm" title="Delete payment">🗑️</button>` : ''}
-                            </div>
-                        </div>
-                        <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
-                            <span class="text-gray-500">Method: <span class="text-gray-800 capitalize">${method}</span></span>
-                            ${note ? `<span class="text-gray-500">Note: <span class="text-gray-800">${note}</span></span>` : ''}
-                        </div>
-                    </div>
-                `;
+                var deleteHtml = !isTenantRole
+                    ? '<button onclick="event.stopPropagation(); deletePayment(' + p.id + ')" class="text-red-400 hover:text-red-600 text-sm" title="Delete">🗑️</button>'
+                    : '';
+
+                return '<div class="border border-gray-100 rounded-lg p-4 hover:bg-gray-50 transition-colors">' +
+                    '<div class="flex items-center justify-between mb-2">' +
+                        '<div class="flex items-center gap-2">' +
+                            '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">' + t("tag_payment") + '</span>' +
+                            '<span class="font-semibold text-emerald-600">' + formatMoney(p.amount) + '</span>' +
+                        '</div>' +
+                        '<div class="flex items-center gap-2">' +
+                            '<span class="text-gray-400 text-sm">' + formattedDate + '</span>' +
+                            deleteHtml +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">' +
+                        '<span class="text-gray-500">' + t("label_method") + ': <span class="text-gray-800 capitalize">' + method + '</span></span>' +
+                        (note ? '<span class="text-gray-500">' + t("label_note") + ': <span class="text-gray-800">' + note + '</span></span>' : '') +
+                    '</div>' +
+                '</div>';
             } else {
-                const b = item.data;
-                const units = (b.curr_reading || 0) - (b.prev_reading || 0);
+                var b = item.data;
+                var units = (b.curr_reading || 0) - (b.prev_reading || 0);
 
-                return `
-                    <div class="border border-amber-200 rounded-lg p-4 bg-amber-50/30 hover:bg-amber-50 transition-colors">
-                        <div class="flex items-center justify-between mb-2">
-                            <div class="flex items-center gap-2">
-                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700">Electricity</span>
-                                <span class="font-semibold text-amber-600">${formatMoney(b.total_amount)}</span>
-                            </div>
-                            <span class="text-gray-400 text-sm">${monthNames[b.month]} ${b.year}</span>
-                        </div>
-                        <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
-                            <span class="text-gray-500">Reading: <span class="text-gray-800">${b.prev_reading} → ${b.curr_reading}</span></span>
-                            <span class="text-gray-500">Units: <span class="text-gray-800">${units}</span></span>
-                            <span class="text-gray-500">Rate: <span class="text-gray-800">₹${b.rate_per_unit}/unit</span></span>
-                        </div>
-                    </div>
-                `;
+                return '<div class="border border-amber-200 rounded-lg p-4 bg-amber-50/30 hover:bg-amber-50 transition-colors">' +
+                    '<div class="flex items-center justify-between mb-2">' +
+                        '<div class="flex items-center gap-2">' +
+                            '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700">' + t("tag_electricity") + '</span>' +
+                            '<span class="font-semibold text-amber-600">' + formatMoney(b.total_amount) + '</span>' +
+                        '</div>' +
+                        '<span class="text-gray-400 text-sm">' + mn[b.month] + ' ' + b.year + '</span>' +
+                    '</div>' +
+                    '<div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">' +
+                        '<span class="text-gray-500">' + t("reading_label") + ': <span class="text-gray-800">' + b.prev_reading + ' → ' + b.curr_reading + '</span></span>' +
+                        '<span class="text-gray-500">' + t("label_units") + ': <span class="text-gray-800">' + units + '</span></span>' +
+                        '<span class="text-gray-500">' + t("rate_label") + ': <span class="text-gray-800">₹' + b.rate_per_unit + '/unit</span></span>' +
+                    '</div>' +
+                '</div>';
             }
-        }).join("")}</div>`;
+        }).join("") + '</div>';
     } catch (err) {
-        container.innerHTML = '<div class="text-red-500 text-center py-4">Failed to load transaction history.</div>';
+        container.innerHTML = '<div class="text-red-500 text-center py-4">' + t("failed_load_payment_history") + '</div>';
     }
 }
 
-// ─── Load Notification History ──────────────────────────────────────
 async function loadNotificationHistory() {
-    const container = document.getElementById("notification-history-content");
+    var container = document.getElementById("notification-history-content");
     try {
-        const notifications = await apiGet(`/notifications/?tenant_id=${tenantId}`);
+        var notifications = await apiGet("/notifications/?tenant_id=" + tenantId);
         if (!Array.isArray(notifications) || notifications.length === 0) {
-            container.innerHTML = '<div class="text-gray-400 text-center py-6">No notifications sent yet.</div>';
+            container.innerHTML = '<div class="text-gray-400 text-center py-6">' + t("no_notifications_sent") + '</div>';
             return;
         }
 
-        const sorted = notifications.sort((a, b) => new Date(b.sent_at || b.created_at || 0) - new Date(a.sent_at || a.created_at || 0));
+        var locale = getLang() === "hi" ? "hi-IN" : "en-IN";
+        var sorted = notifications.sort(function(a, b) { return new Date(b.sent_at || b.created_at || 0) - new Date(a.sent_at || a.created_at || 0); });
 
-        container.innerHTML = `<div class="flex flex-col gap-3">${sorted.map(n => {
-            const rawDate = n.sent_at || n.created_at;
-            const date = rawDate ? new Date(rawDate).toLocaleDateString("en-IN", { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "-";
-            const message = n.message || "-";
-            const truncated = message.length > 100 ? message.substring(0, 100) + "..." : message;
-            const status = n.status || "unknown";
-            const statusClass = status === "sent"
+        container.innerHTML = '<div class="flex flex-col gap-3">' + sorted.map(function(n) {
+            var rawDate = n.sent_at || n.created_at;
+            var date = rawDate ? new Date(rawDate).toLocaleDateString(locale, { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "-";
+            var message = n.message || "-";
+            var truncated = message.length > 100 ? message.substring(0, 100) + "..." : message;
+            var status = n.status || "unknown";
+            var statusClass = status === "sent"
                 ? "bg-emerald-100 text-emerald-700"
                 : status === "failed"
                     ? "bg-red-100 text-red-700"
                     : "bg-gray-100 text-gray-600";
 
-            return `
-                <div class="border border-gray-100 rounded-lg p-4 hover:bg-gray-50 transition-colors">
-                    <div class="flex items-start justify-between gap-3 mb-2">
-                        <p class="text-sm text-gray-700 flex-1">${truncated}</p>
-                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${statusClass} shrink-0 capitalize">${status}</span>
-                    </div>
-                    <p class="text-xs text-gray-400">${date}</p>
-                </div>
-            `;
-        }).join("")}</div>`;
+            return '<div class="border border-gray-100 rounded-lg p-4 hover:bg-gray-50 transition-colors">' +
+                '<div class="flex items-start justify-between gap-3 mb-2">' +
+                    '<p class="text-sm text-gray-700 flex-1">' + truncated + '</p>' +
+                    '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ' + statusClass + ' shrink-0 capitalize">' + status + '</span>' +
+                '</div>' +
+                '<p class="text-xs text-gray-400">' + date + '</p>' +
+            '</div>';
+        }).join("") + '</div>';
     } catch (err) {
-        container.innerHTML = '<div class="text-red-500 text-center py-4">Failed to load notification history.</div>';
+        container.innerHTML = '<div class="text-red-500 text-center py-4">' + t("failed_load_notification_history") + '</div>';
     }
 }
 
-// ─── Edit Tenant Modal ──────────────────────────────────────────────
 function openEditModal() {
     if (!tenant) return;
     document.getElementById("edit-name").value = tenant.name || "";
@@ -404,13 +380,13 @@ function openEditModal() {
     document.getElementById("edit-room").value = tenant.room_number || "";
     document.getElementById("edit-rent").value = tenant.monthly_rent || "";
     document.getElementById("edit-due-day").value = tenant.rent_due_day || "";
-    const modal = document.getElementById("edit-modal");
+    var modal = document.getElementById("edit-modal");
     modal.classList.remove("hidden");
     modal.classList.add("flex");
 }
 
 function closeEditModal() {
-    const modal = document.getElementById("edit-modal");
+    var modal = document.getElementById("edit-modal");
     modal.classList.add("hidden");
     modal.classList.remove("flex");
 }
@@ -418,36 +394,35 @@ function closeEditModal() {
 async function saveEdit(e) {
     e.preventDefault();
     try {
-        await apiPut(`/tenants/${tenantId}`, {
+        await apiPut("/tenants/" + tenantId, {
             name: document.getElementById("edit-name").value.trim(),
             phone: document.getElementById("edit-phone").value.trim(),
             room_number: document.getElementById("edit-room").value.trim(),
             monthly_rent: parseFloat(document.getElementById("edit-rent").value),
             rent_due_day: parseInt(document.getElementById("edit-due-day").value)
         });
-        showToast("Tenant updated successfully", "success");
+        showToast(t("toast_tenant_updated"), "success");
         closeEditModal();
         await loadTenant();
     } catch (err) {
-        showToast("Failed to update tenant", "error");
+        showToast(t("toast_tenant_update_failed"), "error");
     }
 }
 
-// ─── Payment Modal ──────────────────────────────────────────────────
 function openPaymentModal() {
     if (!currentRent) return;
-    const remaining = (currentRent.amount_due || 0) - (currentRent.amount_paid || 0);
+    var remaining = (currentRent.amount_due || 0) - (currentRent.amount_paid || 0);
     document.getElementById("pay-amount").value = remaining > 0 ? remaining : "";
     document.getElementById("pay-date").value = new Date().toISOString().split("T")[0];
     document.getElementById("pay-method").value = "cash";
     document.getElementById("pay-note").value = "";
-    const modal = document.getElementById("payment-modal");
+    var modal = document.getElementById("payment-modal");
     modal.classList.remove("hidden");
     modal.classList.add("flex");
 }
 
 function closePaymentModal() {
-    const modal = document.getElementById("payment-modal");
+    var modal = document.getElementById("payment-modal");
     modal.classList.add("hidden");
     modal.classList.remove("flex");
 }
@@ -464,25 +439,23 @@ async function savePayment(e) {
             method: document.getElementById("pay-method").value,
             note: document.getElementById("pay-note").value.trim() || null
         });
-        showToast("Payment recorded successfully", "success");
+        showToast(t("toast_payment_recorded"), "success");
         closePaymentModal();
         await Promise.all([loadRent(), loadPaymentHistory()]);
     } catch (err) {
-        showToast("Failed to record payment", "error");
+        showToast(t("toast_payment_record_failed"), "error");
     }
 }
 
-// ─── Electricity Modal ──────────────────────────────────────────────
 async function openElectricityModal() {
     document.getElementById("elec-prev").value = "";
     document.getElementById("elec-curr").value = "";
     document.getElementById("elec-rate").value = "8";
     document.getElementById("elec-estimate").classList.add("hidden");
-    const modal = document.getElementById("electricity-modal");
+    var modal = document.getElementById("electricity-modal");
     modal.classList.remove("hidden");
     modal.classList.add("flex");
 
-    // Auto-populate previous reading from the last bill
     if (tenant) {
         try {
             var last = await apiGet("/electricity/last-reading/" + tenantId);
@@ -490,27 +463,25 @@ async function openElectricityModal() {
                 document.getElementById("elec-prev").value = last.curr_reading;
                 document.getElementById("elec-rate").value = last.rate_per_unit || "8";
             }
-        } catch (err) {
-            // Ignore — user can type manually
-        }
+        } catch (err) {}
     }
 }
 
 function closeElectricityModal() {
-    const modal = document.getElementById("electricity-modal");
+    var modal = document.getElementById("electricity-modal");
     modal.classList.add("hidden");
     modal.classList.remove("flex");
 }
 
 function updateEstimate() {
-    const prev = parseFloat(document.getElementById("elec-prev").value) || 0;
-    const curr = parseFloat(document.getElementById("elec-curr").value) || 0;
-    const rate = parseFloat(document.getElementById("elec-rate").value) || 0;
-    const estimateBox = document.getElementById("elec-estimate");
+    var prev = parseFloat(document.getElementById("elec-prev").value) || 0;
+    var curr = parseFloat(document.getElementById("elec-curr").value) || 0;
+    var rate = parseFloat(document.getElementById("elec-rate").value) || 0;
+    var estimateBox = document.getElementById("elec-estimate");
 
     if (curr > 0 && curr >= prev && rate > 0) {
-        const units = curr - prev;
-        const total = units * rate;
+        var units = curr - prev;
+        var total = units * rate;
         document.getElementById("elec-estimate-value").textContent = formatMoney(total);
         document.getElementById("elec-estimate-units").textContent = units;
         estimateBox.classList.remove("hidden");
@@ -523,12 +494,12 @@ async function saveElectricity(e) {
     e.preventDefault();
     if (!tenant) return;
 
-    const prev = parseFloat(document.getElementById("elec-prev").value);
-    const curr = parseFloat(document.getElementById("elec-curr").value);
-    const rate = parseFloat(document.getElementById("elec-rate").value);
+    var prev = parseFloat(document.getElementById("elec-prev").value);
+    var curr = parseFloat(document.getElementById("elec-curr").value);
+    var rate = parseFloat(document.getElementById("elec-rate").value);
 
     if (curr < prev) {
-        showToast("Current reading must be greater than previous reading", "error");
+        showToast(t("toast_reading_invalid"), "error");
         return;
     }
 
@@ -542,108 +513,101 @@ async function saveElectricity(e) {
             curr_reading: curr,
             rate_per_unit: rate
         });
-        showToast("Electricity reading saved", "success");
+        showToast(t("toast_electricity_saved"), "success");
         closeElectricityModal();
         await Promise.all([loadElectricity(), loadElectricityHistory(), loadRent()]);
     } catch (err) {
-        showToast("Failed to save electricity reading", "error");
+        showToast(t("toast_electricity_save_failed"), "error");
     }
 }
 
-// ─── Send Reminder (opens phone SMS app) ───────────────────────────
 async function sendReminder() {
     if (!tenant) return;
     try {
         var result = await apiPost("/notifications/send-reminder", { tenant_id: parseInt(tenantId) });
         var phone = result.phone || tenant.phone;
         var message = encodeURIComponent(result.message);
-
-        // Open phone SMS app with number + message pre-filled
         window.open("sms:" + phone + "?body=" + message, "_self");
-
-        showToast("Opening SMS app...", "success");
+        showToast(t("toast_reminder_opening"), "success");
         await loadNotificationHistory();
     } catch (err) {
-        showToast("Failed to create reminder", "error");
+        showToast(t("toast_reminder_failed"), "error");
     }
 }
 
-// ─── Deactivate Tenant ─────────────────────────────────────────────
 async function deactivateTenant() {
     if (!tenant) return;
-    if (!confirm(`Are you sure you want to deactivate ${tenant.name}? They will be hidden from the dashboard.`)) return;
+    if (!confirm(t("confirm_deactivate") + " " + tenant.name + t("confirm_deactivate_suffix"))) return;
     try {
-        await apiDelete(`/tenants/${tenantId}`);
-        showToast("Tenant deactivated", "success");
+        await apiDelete("/tenants/" + tenantId);
+        showToast(t("toast_tenant_deactivated"), "success");
         window.location.href = "dashboard.html";
     } catch (err) {
-        showToast("Failed to deactivate tenant", "error");
+        showToast(t("toast_tenant_deactivate_failed"), "error");
     }
 }
 
-// ─── Delete Payment ────────────────────────────────────────────────
 async function deletePayment(paymentId) {
-    if (!confirm("Delete this payment? The rent status will be updated accordingly.")) return;
+    if (!confirm(t("confirm_delete_payment"))) return;
     try {
-        await apiDelete(`/rents/payments/${paymentId}`);
-        showToast("Payment deleted", "success");
+        await apiDelete("/rents/payments/" + paymentId);
+        showToast(t("toast_payment_deleted"), "success");
         await Promise.all([loadRent(), loadPaymentHistory()]);
     } catch (err) {
-        showToast("Failed to delete payment", "error");
+        showToast(t("toast_payment_delete_failed"), "error");
     }
 }
 
-// ─── Delete Electricity Reading ────────────────────────────────────
 async function deleteElectricity(billId) {
-    if (!confirm("Delete this electricity reading?")) return;
+    if (!confirm(t("confirm_delete_reading"))) return;
     try {
-        await apiDelete(`/electricity/${billId}`);
-        showToast("Electricity reading deleted", "success");
+        await apiDelete("/electricity/" + billId);
+        showToast(t("toast_electricity_deleted"), "success");
         await Promise.all([loadElectricity(), loadElectricityHistory(), loadRent()]);
     } catch (err) {
-        showToast("Failed to delete reading", "error");
+        showToast(t("toast_electricity_delete_failed"), "error");
     }
 }
 
-// ─── Electricity History ───────────────────────────────────────────
 async function loadElectricityHistory() {
-    const container = document.getElementById("electricity-history-content");
+    var container = document.getElementById("electricity-history-content");
+    var mn = getMonthNames();
     if (!tenant) {
         container.innerHTML = '<div class="text-gray-400 text-center py-4">Loading...</div>';
         return;
     }
     try {
-        const bills = await apiGet(`/electricity/?tenant_id=${tenantId}`);
+        var bills = await apiGet("/electricity/?tenant_id=" + tenantId);
         if (!Array.isArray(bills) || bills.length === 0) {
-            container.innerHTML = '<div class="text-gray-400 text-center py-6">No electricity readings yet.</div>';
+            container.innerHTML = '<div class="text-gray-400 text-center py-6">' + t("no_readings_yet") + '</div>';
             return;
         }
 
-        container.innerHTML = `<div class="flex flex-col gap-3">${bills.map(b => {
-            const units = (b.curr_reading || 0) - (b.prev_reading || 0);
-            return `
-                <div class="border border-gray-100 rounded-lg p-4 hover:bg-gray-50 transition-colors">
-                    <div class="flex items-center justify-between mb-2">
-                        <span class="font-semibold text-gray-800">${monthNames[b.month]} ${b.year}</span>
-                        <div class="flex items-center gap-2">
-                            <span class="font-semibold text-amber-600">${formatMoney(b.total_amount)}</span>
-                            ${!isTenantRole ? `<button onclick="event.stopPropagation(); deleteElectricity(${b.id})" class="text-red-400 hover:text-red-600 text-sm" title="Delete reading">🗑️</button>` : ''}
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-3 gap-2 text-sm">
-                        <div><span class="text-gray-500">Prev:</span> <span class="text-gray-800">${b.prev_reading}</span></div>
-                        <div><span class="text-gray-500">Curr:</span> <span class="text-gray-800">${b.curr_reading}</span></div>
-                        <div><span class="text-gray-500">Units:</span> <span class="text-gray-800">${units} × ₹${b.rate_per_unit}</span></div>
-                    </div>
-                </div>
-            `;
-        }).join("")}</div>`;
+        container.innerHTML = '<div class="flex flex-col gap-3">' + bills.map(function(b) {
+            var units = (b.curr_reading || 0) - (b.prev_reading || 0);
+            var deleteBtn = !isTenantRole
+                ? '<button onclick="event.stopPropagation(); deleteElectricity(' + b.id + ')" class="text-red-400 hover:text-red-600 text-sm" title="Delete">🗑️</button>'
+                : '';
+            return '<div class="border border-gray-100 rounded-lg p-4 hover:bg-gray-50 transition-colors">' +
+                '<div class="flex items-center justify-between mb-2">' +
+                    '<span class="font-semibold text-gray-800">' + mn[b.month] + ' ' + b.year + '</span>' +
+                    '<div class="flex items-center gap-2">' +
+                        '<span class="font-semibold text-amber-600">' + formatMoney(b.total_amount) + '</span>' +
+                        deleteBtn +
+                    '</div>' +
+                '</div>' +
+                '<div class="grid grid-cols-3 gap-2 text-sm">' +
+                    '<div><span class="text-gray-500">' + t("label_previous") + ':</span> <span class="text-gray-800">' + b.prev_reading + '</span></div>' +
+                    '<div><span class="text-gray-500">' + t("label_current") + ':</span> <span class="text-gray-800">' + b.curr_reading + '</span></div>' +
+                    '<div><span class="text-gray-500">' + t("label_units") + ':</span> <span class="text-gray-800">' + units + ' × ₹' + b.rate_per_unit + '</span></div>' +
+                '</div>' +
+            '</div>';
+        }).join("") + '</div>';
     } catch (err) {
-        container.innerHTML = '<div class="text-red-500 text-center py-4">Failed to load electricity history.</div>';
+        container.innerHTML = '<div class="text-red-500 text-center py-4">' + t("failed_load_electricity_history") + '</div>';
     }
 }
 
-// ─── Month Navigation ──────────────────────────────────────────────
 function prevMonth() {
     currentMonth--;
     if (currentMonth < 1) { currentMonth = 12; currentYear--; }
@@ -666,10 +630,10 @@ function nextMonth() {
 }
 
 function updateMonthLabel() {
-    var label = monthNames[currentMonth] + " " + currentYear;
+    var mn = getMonthNames();
+    var label = mn[currentMonth] + " " + currentYear;
     var el = document.getElementById("month-nav-label");
     if (el) el.textContent = label;
-    // Dim forward button when at current month
     var nextBtn = document.querySelector('#rent-section button[onclick="nextMonth()"]');
     if (nextBtn) {
         var today = new Date();
@@ -680,15 +644,25 @@ function updateMonthLabel() {
     }
 }
 
-// ─── Sidebar Toggle ─────────────────────────────────────────────────
 function toggleSidebar() {
-    const sidebar = document.getElementById("sidebar");
-    const overlay = document.getElementById("sidebar-overlay");
+    var sidebar = document.getElementById("sidebar");
+    var overlay = document.getElementById("sidebar-overlay");
     sidebar.classList.toggle("-translate-x-full");
     overlay.classList.toggle("hidden");
 }
 
-// ─── Init ───────────────────────────────────────────────────────────
+document.addEventListener("langchange", function() {
+    updateMonthLabel();
+    if (tenant) {
+        loadTenant();
+        loadRent();
+        loadElectricity();
+        loadElectricityHistory();
+        loadPaymentHistory();
+        loadNotificationHistory();
+    }
+});
+
 async function init() {
     updateMonthLabel();
     await loadTenant();

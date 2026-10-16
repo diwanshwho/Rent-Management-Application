@@ -1,5 +1,11 @@
 const API_BASE = "/api";
 
+if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+        navigator.serviceWorker.register("/sw.js").catch(() => {});
+    });
+}
+
 /** Get stored JWT token */
 function getToken() {
     return localStorage.getItem("token");
@@ -126,5 +132,6 @@ function statusBadge(status) {
         overdue: "badge-overdue",
         partial: "badge-partial",
     };
-    return `<span class="px-2 py-1 rounded-full text-xs font-medium ${cls[status] || "bg-gray-100 text-gray-600"}">${status}</span>`;
+    var label = (typeof t === "function") ? t("status_" + status) : status;
+    return `<span class="px-2 py-1 rounded-full text-xs font-medium ${cls[status] || "bg-gray-100 text-gray-600"}">${label}</span>`;
 }

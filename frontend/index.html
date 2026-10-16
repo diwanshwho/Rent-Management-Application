@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rent Manager - Login</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="css/style.css?v=3">
+    <link rel="stylesheet" href="css/style.css?v=4">
     <link rel="manifest" href="/manifest.json">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>body { font-family: 'Inter', sans-serif; }</style>
@@ -19,21 +19,23 @@
             <div class="w-16 h-16 bg-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
                 <span class="text-3xl">🏠</span>
             </div>
-            <h1 class="text-2xl font-bold text-gray-800">Rent Manager</h1>
-            <p class="text-gray-500 mt-1">Sign in to continue</p>
+            <h1 class="text-2xl font-bold text-gray-800" data-i18n="app_name">Rent Manager</h1>
+            <p class="text-gray-500 mt-1" data-i18n="login_subtitle">Sign in to continue</p>
+            <!-- Language Switcher -->
+            <div id="lang-switcher-login" class="mt-3"></div>
         </div>
 
         <!-- Login Card -->
         <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
             <!-- Tabs -->
             <div class="flex border-b border-gray-100">
-                <button onclick="switchTab('admin-login')" id="tab-admin-login" class="flex-1 py-3 text-sm font-medium text-center transition-colors border-b-2 border-indigo-600 text-indigo-700">
+                <button onclick="switchTab('admin-login')" id="tab-admin-login" class="flex-1 py-3 text-sm font-medium text-center transition-colors border-b-2 border-indigo-600 text-indigo-700" data-i18n="tab_admin_login">
                     Admin Login
                 </button>
-                <button onclick="switchTab('tenant-login')" id="tab-tenant-login" class="flex-1 py-3 text-sm font-medium text-center transition-colors border-b-2 border-transparent text-gray-500 hover:text-gray-700">
+                <button onclick="switchTab('tenant-login')" id="tab-tenant-login" class="flex-1 py-3 text-sm font-medium text-center transition-colors border-b-2 border-transparent text-gray-500 hover:text-gray-700" data-i18n="tab_tenant_login">
                     Tenant Login
                 </button>
-                <button onclick="switchTab('signup')" id="tab-signup" class="flex-1 py-3 text-sm font-medium text-center transition-colors border-b-2 border-transparent text-gray-500 hover:text-gray-700">
+                <button onclick="switchTab('signup')" id="tab-signup" class="flex-1 py-3 text-sm font-medium text-center transition-colors border-b-2 border-transparent text-gray-500 hover:text-gray-700" data-i18n="tab_signup">
                     Sign Up
                 </button>
             </div>
@@ -41,19 +43,19 @@
             <!-- Admin Login Form -->
             <form id="form-admin-login" class="p-6 space-y-5" onsubmit="handleAdminLogin(event)">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1" data-i18n="label_email">Email</label>
                     <input type="email" id="login-email" required
                         class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
                         placeholder="admin@rentmanager.com">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1" data-i18n="label_password">Password</label>
                     <input type="password" id="login-password" required
                         class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
                         placeholder="••••••••">
                 </div>
                 <button type="submit" id="btn-admin-login"
-                    class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-lg transition flex items-center justify-center gap-2">
+                    class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-lg transition flex items-center justify-center gap-2" data-i18n="btn_signin">
                     Sign In
                 </button>
                 <p id="admin-login-error" class="text-rose-500 text-sm text-center hidden"></p>
@@ -61,14 +63,14 @@
 
             <!-- Tenant Login Form -->
             <form id="form-tenant-login" class="p-6 space-y-5 hidden" onsubmit="handleTenantLogin(event)">
-                <p class="text-sm text-gray-500 text-center">Enter your registered mobile number to view your rent details.</p>
+                <p class="text-sm text-gray-500 text-center" data-i18n="tenant_login_desc">Enter your registered mobile number to view your rent details.</p>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Mobile Number</label>
-                    <input type="tel" id="tenant-phone" required placeholder="10 digit mobile number"
+                    <label class="block text-sm font-medium text-gray-700 mb-1" data-i18n="label_mobile">Mobile Number</label>
+                    <input type="tel" id="tenant-phone" required data-i18n-placeholder="placeholder_mobile" placeholder="10 digit mobile number"
                         class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition">
                 </div>
                 <button type="submit" id="btn-tenant-login"
-                    class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2.5 rounded-lg transition flex items-center justify-center gap-2">
+                    class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2.5 rounded-lg transition flex items-center justify-center gap-2" data-i18n="btn_view_rent">
                     View My Rent
                 </button>
                 <p id="tenant-login-error" class="text-rose-500 text-sm text-center hidden"></p>
@@ -77,25 +79,25 @@
             <!-- Signup Form -->
             <form id="form-signup" class="p-6 space-y-5 hidden" onsubmit="handleSignup(event)">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1" data-i18n="label_name">Name</label>
                     <input type="text" id="signup-name" required
                         class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
-                        placeholder="Your name">
+                        data-i18n-placeholder="placeholder_name" placeholder="Your name">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1" data-i18n="label_email">Email</label>
                     <input type="email" id="signup-email" required
                         class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
-                        placeholder="you@example.com">
+                        data-i18n-placeholder="placeholder_email" placeholder="you@example.com">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1" data-i18n="label_password">Password</label>
                     <input type="password" id="signup-password" required minlength="6"
                         class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
-                        placeholder="Min 6 characters">
+                        data-i18n-placeholder="placeholder_password_min" placeholder="Min 6 characters">
                 </div>
                 <button type="submit" id="btn-signup"
-                    class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-lg transition flex items-center justify-center gap-2">
+                    class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-lg transition flex items-center justify-center gap-2" data-i18n="btn_create_account">
                     Create Account
                 </button>
                 <p id="signup-error" class="text-rose-500 text-sm text-center hidden"></p>
@@ -103,8 +105,11 @@
         </div>
     </div>
 
-    <script src="js/api.js?v=3"></script>
+    <script src="js/api.js?v=4"></script>
+    <script src="js/i18n.js?v=4"></script>
     <script>
+        renderLangSwitcher(document.getElementById("lang-switcher-login"));
+
         if (getToken()) {
             if (getRole() === "tenant" && getTenantAccessId()) {
                 window.location.href = "tenant.html?id=" + getTenantAccessId();
@@ -148,7 +153,7 @@
                 errEl.textContent = err.message;
                 errEl.classList.remove("hidden");
             } finally {
-                btn.innerHTML = "Sign In";
+                btn.textContent = t("btn_signin");
                 btn.disabled = false;
             }
         }
@@ -174,7 +179,7 @@
                 errEl.textContent = err.message;
                 errEl.classList.remove("hidden");
             } finally {
-                btn.innerHTML = "View My Rent";
+                btn.textContent = t("btn_view_rent");
                 btn.disabled = false;
             }
         }
@@ -201,7 +206,7 @@
                 errEl.textContent = err.message;
                 errEl.classList.remove("hidden");
             } finally {
-                btn.innerHTML = "Create Account";
+                btn.textContent = t("btn_create_account");
                 btn.disabled = false;
             }
         }
