@@ -90,7 +90,7 @@ if os.path.isdir(FRONTEND_DIR):
     # Serve static assets (css, js, images)
     app.mount("/css", StaticFiles(directory=os.path.join(FRONTEND_DIR, "css")), name="css")
     app.mount("/js", StaticFiles(directory=os.path.join(FRONTEND_DIR, "js")), name="js")
-    app.mount("/icons", StaticFiles(directory=os.path.join(FRONTEND_DIR, "icons")), name="icons")
+    app.mount("/icons", StaticFiles(directory=os.path.join(FRONTEND_DIR, "css/icons")), name="icons")
 
     @app.get("/manifest.json")
     def serve_manifest():
