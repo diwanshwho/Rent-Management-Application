@@ -100,13 +100,15 @@ async function loadTenants() {
                 status: rent ? rent.status : null,
                 amount_due: rent ? rent.amount_due : t.monthly_rent,
                 amount_paid: rent ? rent.amount_paid : 0,
-                rent_id: rent ? rent.id : null
+                rent_id: rent ? rent.id : null,
+                due_date: rent ? rent.due_date : null,
+
             };
         });
 
         tbody.innerHTML = merged.map(tn => {
             const badge = tn.status
-                ? statusBadge(tn.status)
+                ? statusBadge(tn.status, tn.due_date)
                 : '<span class="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-500">' + t("no_rent") + '</span>';
 
             const remindBtn = tn.status && tn.status !== "paid"
@@ -130,7 +132,7 @@ async function loadTenants() {
 
         cards.innerHTML = merged.map(tn => {
             const badge = tn.status
-                ? statusBadge(tn.status)
+                ? statusBadge(tn.status, tn.due_date)
                 : '<span class="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-500">' + t("no_rent") + '</span>';
 
             return `
