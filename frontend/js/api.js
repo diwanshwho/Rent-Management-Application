@@ -125,7 +125,7 @@ function formatMoney(amount) {
 }
 
 /** Get status badge HTML */
-function statusBadge(status) {
+function statusBadge(status, dueDate) {
     const cls = {
         paid: "badge-paid",
         pending: "badge-pending",
@@ -133,5 +133,12 @@ function statusBadge(status) {
         partial: "badge-partial",
     };
     var label = (typeof t === "function") ? t("status_" + status) : status;
-    return `<span class="px-2 py-1 rounded-full text-xs font-medium ${cls[status] || "bg-gray-100 text-gray-600"}">${label}</span>`;
+    var badge = `<span class="px-2 py-1 rounded-full text-xs font-medium ${cls[status] || "bg-gray-100 text-gray-600"}">${label}</span>`;
+    if (dueDate && status && status !== "paid") {
+        var d = new Date(dueDate + "T00:00:00");
+        var dueDateStr = d.getDate() + " " + (typeof getMonthNames === "function" ? getMonthNames()[d.getMonth() + 1] : (d.getMonth() + 1));
+        var dueLabel = (typeof t === "function") ? t("due_by") : "Due by";
+        badge += `<span class="block text-[10px] text-gray-500 mt-0.5">${dueLabel} ${dueDateStr}</span>`;
+    }
+    return badge;
 }
