@@ -135,6 +135,9 @@ function statusBadge(status, dueDate) {
     var label = (typeof t === "function") ? t("status_" + status) : status;
     if (dueDate && status && status !== "paid") {
         var d = new Date(dueDate + "T00:00:00");
+        if (d.getDate() < 16) {
+            d.setMonth(d.getMonth() + 1);
+        }
         var day = d.getDate();
         var monthNames = (typeof getMonthNames === "function") ? getMonthNames() : null;
         var monthFull = monthNames ? monthNames[d.getMonth() + 1] : String(d.getMonth() + 1);
