@@ -133,12 +133,27 @@ function statusBadge(status, dueDate) {
         partial: "badge-partial",
     };
     var label = (typeof t === "function") ? t("status_" + status) : status;
-    var badge = `<span class="px-2 py-1 rounded-full text-xs font-medium ${cls[status] || "bg-gray-100 text-gray-600"}">${label}</span>`;
     if (dueDate && status && status !== "paid") {
         var d = new Date(dueDate + "T00:00:00");
-        var dueDateStr = d.getDate() + " " + (typeof getMonthNames === "function" ? getMonthNames()[d.getMonth() + 1] : (d.getMonth() + 1));
-        var dueLabel = (typeof t === "function") ? t("due_by") : "Due by";
-        badge += `<span class="block text-[10px] text-gray-500 mt-0.5">${dueLabel} ${dueDateStr}</span>`;
+        var day = d.getDate();
+        var monthNames = (typeof getMonthNames === "function") ? getMonthNames() : null;
+        var monthFull = monthNames ? monthNames[d.getMonth() + 1] : String(d.getMonth() + 1);
+        var lang = (typeof getLang === "function") ? getLang() : "en";
+
+        var dateStr;
+        if (lang === "hi") {
+            dateStr = day + " " + monthFull;
+        } else {
+            var sfx = ["th","st","nd","rd"];
+            var v = day % 100;
+            var ord = day + (sfx[(v - 20) % 10] || sfx[v] || sfx[0]);
+            dateStr = ord + " " + monthFull.substring(0, 3);
+        }
+
+        var formatted = (typeof t === "function")
+            ? t("status_due_format").replace("{status}", label).replace("{date}", dateStr)
+            : label;
+        return `<span class="px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${cls[status] || "bg-gray-100 text-gray-600"}">${formatted}</span>`;
     }
-    return badge;
+    return `<span class="px-2 py-1 rounded-full text-xs font-medium ${cls[status] || "bg-gray-100 text-gray-600"}">${label}</span>`;
 }
