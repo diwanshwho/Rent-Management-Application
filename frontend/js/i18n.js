@@ -61,6 +61,7 @@ const translations = {
         status_pending: "pending",
         status_overdue: "overdue",
         status_partial: "partial",
+        due_by: "Due by",
 
         // Notifications page
         notifications_title: "Notifications",
@@ -238,6 +239,7 @@ const translations = {
         status_pending: "बाकी",
         status_overdue: "अतिदेय",
         status_partial: "आंशिक",
+        due_by: "देय तिथि",
 
         // Notifications page
         notifications_title: "सूचनाएं",
